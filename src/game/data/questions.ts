@@ -9,78 +9,78 @@ export const quizQuestions: Question[] = [
     // Sculpture
     {
         category: 'Sculpture',
-        question: 'What material is Michelangelo\'s David made of?',
-        options: ['Marble', 'Clay', 'Bronze', 'Wood'],
+        question: 'De que material é feito o David de Michelangelo?',
+        options: ['Mármore', 'Argila', 'Bronze', 'Madeira'],
         answer: 0
     },
     {
         category: 'Sculpture',
-        question: 'Who sculpted "The Thinker"?',
+        question: 'Quem esculpiu "O Pensador"?',
         options: ['Michelangelo', 'Rodin', 'Bernini', 'Donatello'],
         answer: 1
     },
     // Painting
     {
         category: 'Painting',
-        question: 'Who painted the Mona Lisa?',
+        question: 'Quem pintou a Mona Lisa?',
         options: ['Michelangelo', 'Leonardo da Vinci', 'Raphael', 'Donatello'],
         answer: 1
     },
     {
         category: 'Painting',
-        question: 'Which artist is known for "Starry Night"?',
+        question: 'Qual artista é conhecido por "Noite Estrelada"?',
         options: ['Picasso', 'Van Gogh', 'Monet', 'Dali'],
         answer: 1
     },
     // Photography
     {
         category: 'Photography',
-        question: 'Who is considered the inventor of photography?',
+        question: 'Quem é considerado o inventor da fotografia?',
         options: ['Niepce', 'Eiffel', 'Bell', 'Edison'],
         answer: 0
     },
     {
         category: 'Photography',
-        question: 'What does DSLR stand for?',
+        question: 'O que significa DSLR?',
         options: ['Digital Single Lens Reflex', 'Digital Sound Light Record', 'Direct Single Lens React', 'Digital Simple Lens Reflex'],
         answer: 0
     },
     // Music
     {
         category: 'Music',
-        question: 'How many keys does a standard piano have?',
+        question: 'Quantas teclas tem um piano padrão?',
         options: ['66', '77', '88', '99'],
         answer: 2
     },
     {
         category: 'Music',
-        question: 'Who composed "Moonlight Sonata"?',
+        question: 'Quem compôs a "Sonata ao Luar"?',
         options: ['Mozart', 'Bach', 'Beethoven', 'Chopin'],
         answer: 2
     },
     // Dance
     {
         category: 'Dance',
-        question: 'What country is ballet from?',
-        options: ['Italy', 'France', 'Russia', 'Spain'],
+        question: 'De que país é o balé?',
+        options: ['Itália', 'França', 'Rússia', 'Espanha'],
         answer: 1
     },
     {
         category: 'Dance',
-        question: 'Which dance style originated in Cuba?',
-        options: ['Tango', 'Salsa', 'Waltz', 'Foxtrot'],
+        question: 'Qual estilo de dança teve origem em Cuba?',
+        options: ['Tango', 'Salsa', 'Valsa', 'Foxtrot'],
         answer: 1
     },
     // Theater
     {
         category: 'Theater',
-        question: 'Who wrote Romeo and Juliet?',
+        question: 'Quem escreveu Romeu e Julieta?',
         options: ['Dickens', 'Shakespeare', 'Hemingway', 'Austen'],
         answer: 1
     },
     {
         category: 'Theater',
-        question: 'What is the name of the famous theater district in New York?',
+        question: 'Qual é o nome do famoso distrito teatral de Nova York?',
         options: ['Broadway', 'Hollywood', 'West End', 'Off-Broadway'],
         answer: 0
     }

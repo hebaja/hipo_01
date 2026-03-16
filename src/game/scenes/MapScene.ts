@@ -70,11 +70,11 @@ export class MapScene extends Scene {
                 this.startQuiz(nearbyBuilding);
             }
         } else {
-            this.interactionText.setText('Move around to find buildings');
+            this.interactionText.setText('Mova e interaja com os prédios');
         }
 
         // Update score display
-        this.scoreText.setText(`Score: ${this.score} | Conquered: ${this.mapGrid.getConqueredCount()}/${this.mapGrid.getTotalCount()}`);
+        this.scoreText.setText(`Score: ${this.score} | Conquistado: ${this.mapGrid.getConqueredCount()}/${this.mapGrid.getTotalCount()}`);
     }
 
     private drawMap() {
@@ -160,7 +160,7 @@ export class MapScene extends Scene {
             const msg = this.add.text(
                 this.cameras.main.midPoint.x,
                 this.cameras.main.midPoint.y - 100,
-                'Building Conquered! +100',
+                'Prédio conquistado! +100',
                 {
                     fontSize: '24px',
                     color: '#00ff00',
@@ -176,7 +176,7 @@ export class MapScene extends Scene {
             const msg = this.add.text(
                 this.cameras.main.midPoint.x,
                 this.cameras.main.midPoint.y - 100,
-                'Failed! Try again.',
+                'Errado! Tente novamente.',
                 {
                     fontSize: '24px',
                     color: '#ff0000',
