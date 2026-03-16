@@ -43,16 +43,15 @@ export class MapGrid {
             const innerRadius = s === 0 ? 0 : radii[s - 1];
             const outerRadius = radii[s];
             
-            // Calculate how many buildings for this stage
             const thresholdCurrent = Math.ceil((s + 1) * totalCount / stages);
             const thresholdPrev = s === 0 ? 0 : Math.ceil(s * totalCount / stages);
             const countForStage = thresholdCurrent - thresholdPrev;
 
             let placedInStage = 0;
             let attempts = 0;
-            const maxAttempts = 1000;
+            const maxAttempts = 500;
 
-            while (placedInStage < countForStage && attempts < maxAttempts) {
+            while (placedInStage < countForStage && attempts < maxAttempts * 2) {
                 attempts++;
                 const x = Math.floor(Math.random() * this.width);
                 const y = Math.floor(Math.random() * this.height);
@@ -62,11 +61,17 @@ export class MapGrid {
 
                 const distance = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
                 
-                if (distance <= outerRadius && distance >= innerRadius) {
+                // Fallback: If we've tried too many times for this specific ring,
+                // accept ANY position within the outer radius (including inner areas)
+                // This ensures we always place the required number of buildings.
+                const isWithinZone = attempts < maxAttempts 
+                    ? (distance <= outerRadius && distance >= innerRadius)
+                    : (distance <= outerRadius);
+
+                if (isWithinZone) {
                     positions.add(posKey);
                     const categoryData = categories[Math.floor(Math.random() * categories.length)];
                     
-                    // Assign question using round-robin within category
                     const questionIndex = categoryQuestionCount[categoryData.name] % 2;
                     const questionNumber = Object.values(categoryQuestionCount).reduce((a, b) => a + b, 0) + 1;
                     categoryQuestionCount[categoryData.name]++;
