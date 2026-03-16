@@ -6,6 +6,9 @@ export interface Building {
     category: string;
     color: number;
     conquered: boolean;
+    questionIndex: number;
+    questionNumber: number;
+    wrongAttempts: number;
 }
 
 export class MapGrid {
@@ -29,6 +32,12 @@ export class MapGrid {
     private generateBuildings(count: number) {
         const positions = new Set<string>();
         
+        // Track question distribution per category
+        const categoryQuestionCount: { [category: string]: number } = {};
+        categories.forEach(cat => {
+            categoryQuestionCount[cat.name] = 0;
+        });
+
         for (let i = 0; i < count; i++) {
             let x, y, posKey;
             
@@ -44,12 +53,21 @@ export class MapGrid {
             // Pick random category
             const categoryData = categories[Math.floor(Math.random() * categories.length)];
             
+            // Assign question using round-robin within category
+            const questionIndex = categoryQuestionCount[categoryData.name] % 2;
+            const questionNumber = Object.values(categoryQuestionCount).reduce((a, b) => a + b, 0) + 1;
+            
+            categoryQuestionCount[categoryData.name]++;
+
             this.grid.push({
                 x,
                 y,
                 category: categoryData.name,
                 color: categoryData.color,
-                conquered: false
+                conquered: false,
+                questionIndex: questionIndex,
+                questionNumber: questionNumber,
+                wrongAttempts: 0
             });
         }
     }
