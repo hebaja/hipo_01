@@ -1,0 +1,39 @@
+Plataformas:
+O foco principal é a democratização do acesso e a facilidade de implementação em ambientes educacionais, sem necessidade de instalações complexas.
+	-> Onde está desenvolvendo? Ambiente Web (utilizando frameworks modernos como Phaser) para garantir portabilidade e atualizações em tempo real.
+
+Público-alvo:
+O projeto possui um público híbrido, atendendo tanto o consumo individual quanto o uso mediado por instituições.
+	-> Faixa etária: Principalmente jovens de 18 a 30 anos (Geração Z e Millennials), mas com alcance estendido a educadores de diversas idades.
+	-> Classe social: Ampla (A a D), visto que o acesso via web reduz barreiras de hardware.
+	-> Sexo ou sexualidade: Todos. O projeto preza pela inclusão e diversidade cultural.
+	-> ESRB / Classificação Indicativa: L (Livre) ou 10+. O conteúdo é educativo, focado em arte e cultura, sem restrições de idade.
+
+Perfil Psicográfico:
+	-> Estudantes/Jovens: Pessoas interessadas em gamificação, tecnologia e que buscam formas dinâmicas de consumir arte e cultura.
+
+Resumo da História do Jogo:
+O jogador assume o papel de um "Explorador Cultural" que viaja pelo mundo para reconquistar o conhecimento artístico perdido. Ao visitar diferentes cidades (spots), ele deve provar sua maestria em diversas áreas das artes para "conquistar" os prédios históricos e revitalizar a cultura local. O objetivo final é dominar o mapa através do conhecimento.
+
+Gameplay:
+	-> Gêneros de jogo: Quiz, Educativo, Estratégia/Conquista.
+	-> Câmeras de jogo: 2D Top-down (Visão do mapa) e interface estática (telas de quiz).
+	-> Cenários e Fases: O mapa-múndi é dividido em "Spots" (Cidades). Cada cidade possui "Prédios" que representam trilhas de conhecimento.
+	-> Mecânicas básicas: * Responder perguntas de múltipla escolha em 3 níveis (Fácil, Médio, Difícil).
+		-> Conquista de território (ganhar prédios).
+		-> Desafios PvP (desafiar outro jogador para roubar/defender um prédio).
+		-> Progressão básica: Começa com apenas uma cidade liberada. Ao completar as trilhas (Escultura, Pintura, Música, etc.), novas cidades e regiões são desbloqueadas.
+		-> Recompensas básicas: Posse dos prédios no mapa, insígnias de "Mestre" em categorias específicas e progressão no ranking global.
+
+Diferenciais de Venda:
+	-> Abordagem Multidisciplinar: Cobre seis vertentes das artes em um único lugar (Escultura, Pintura, Fotografia, Música, Dança e Teatro).
+	-> Gamificação da Conquista: Diferente de quizzes comuns, o erro pode custar um prédio já conquistado, aumentando o fator "risco e recompensa".
+	-> Visual Retro/Pixel Art: (Baseado nas referências do mapa) O uso de estética 8-bit ou 16-bit para representar o mundo e os prédios.
+
+Produtos Concorrentes:
+	-> Diretos: Trivia Crack (Perguntados), QuizUp.
+	-> Indiretos: Duolingo (pela estrutura de trilhas e ofensivas), Google Arts & Culture (pelo conteúdo educativo).
+
+Referências:
+	-> Estética: Pokémon (Mapas de região), SimCity (Ícones de prédios).
+	-> Narrativa: Carmen Sandiego (Exploração geográfica e educativa).

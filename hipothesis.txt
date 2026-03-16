@@ -1,0 +1,44 @@
+1. Missions. Player accomplishes specific objectives about art and culture.
+2. Exploitation quiz. Questions appear while player explores map.
+3. Cultural collection. Players unlock cultural contents throught the game.
+
+Platforms:
+The main focus is on democratizing access and facilitating implementation in educational environments, without the need for complex installations.
+	-> Where is it being developed? Web environment (using modern frameworks like Phaser) to guarantee portability and real-time updates.
+
+Target Audience:
+The project has a hybrid audience, serving both individual consumption and institution-mediated use.
+	-> Age Range: Mainly young people aged 18 to 30 (Generation Z and Millennials), but with an extended reach to educators of various ages.
+	-> Social Class: Broad (A to D), as web access reduces hardware barriers.
+	-> Gender or Sexuality: All. The project values inclusivity and cultural diversity.
+	-> ESRB / Content Rating: L (Everyone) or 10+. The content is educational, focused on art and culture, with no age restrictions.
+
+Psychographic Profile:
+	-> Students/Youth: People interested in gamification, technology, and who seek dynamic ways to consume art and culture.
+
+Game Story Summary:
+The player takes on the role of a "Cultural Explorer" who travels the world to reconquer lost artistic knowledge. By visiting different cities (spots), he must prove his mastery in various areas of the arts to "conquer" historic buildings and revitalize local culture. The ultimate goal is to dominate the map through knowledge.
+
+Gameplay:
+	-> Game Genres: Quiz, Educational, Strategy/Conquest.
+	-> Game Cameras: 2D Top-down (Map View) and static interface (quiz screens).
+	-> Scenarios and Phases: The world map is divided into "Spots" (Cities). Each city has "Buildings" that represent knowledge tracks.
+	-> Basic Mechanics: * Answer multiple-choice questions in 3 levels (Easy, Medium, Hard).
+		-> Territory conquest (gaining buildings).
+		-> PvP challenges (challenging another player to steal/defend a building).
+		-> Basic Progression: Starts with only one city unlocked. By completing the tracks (Sculpture, Painting, Music, etc.), new cities and regions are unlocked.
+		-> Basic Rewards: Ownership of buildings on the map, "Master" badges in specific categories, and progression in the global ranking.
+
+Sales Differentiators:
+	-> Multidisciplinary Approach: Covers six aspects of art in one place (Sculpture, Painting, Photography, Music, Dance, and Theater).
+	-> Gamification of Conquest: Unlike common quizzes, mistakes can cost an already conquered building, increasing the "risk and reward" factor.
+	-> Visual Retro/Pixel Art: (Based on map references) The use of 8-bit or 16-bit aesthetics to represent the world and buildings.
+
+Competitor Products:
+	-> Direct: Trivia Crack (Perguntados), QuizUp.
+	-> Indirect: Duolingo (by the structure of tracks and offenses), Google Arts & Culture (by educational content).
+
+References:
+	-> Aesthetic: Pokémon (Region Maps), SimCity (Building Icons).
+	-> Narrative: Carmen Sandiego (Geographic and educational exploration).
+
