@@ -17,13 +17,19 @@ export class MapScene extends Scene {
     private tutorialContainer: Phaser.GameObjects.Container | null = null;
     private questionNumberTexts: Phaser.GameObjects.Text[] = [];
 
+    private TOTAL_EXPANSIONS = 5;
+    private RADII = [4, 7, 10, 14, 20];
+
     constructor() {
         super('MapScene');
     }
 
     create() {
         // Initialize map grid
-        this.mapGrid = new MapGrid(this.gridSize, this.gridSize, this.tileSize, this.buildingCount);
+        this.mapGrid = new MapGrid(this.gridSize, this.gridSize, this.tileSize);
+        
+        // Generate buildings in zones to guarantee progression
+        this.mapGrid.generateStagedBuildings(this.buildingCount, this.TOTAL_EXPANSIONS, this.RADII);
 
         // Create graphics object for rendering
         this.graphics = this.add.graphics();
@@ -34,7 +40,8 @@ export class MapScene extends Scene {
         this.player = new Player(this, this.mapGrid, startX, startY);
 
         // Initial map reveal
-        this.mapGrid.revealArea(startX, startY, 4);
+        this.mapGrid.discoveryRadius = this.RADII[0];
+        this.mapGrid.updateDiscoveryFromCenter(startX, startY);
 
         // Setup camera
         this.cameras.main.startFollow(this.player.sprite, true, 0.1, 0.1);
@@ -179,7 +186,33 @@ export class MapScene extends Scene {
     public onQuizComplete(success: boolean | null, building: Building) {
         if (success === true) {
             this.mapGrid.conquerBuilding(building);
-            this.mapGrid.revealArea(building.x, building.y, 5); // Reveal more area around conquered building
+            
+            // Refined Expansion logic: 5 discrete stages
+            const totalBuildings = this.mapGrid.getTotalCount();
+            const conqueredCount = this.mapGrid.getConqueredCount();
+            
+            // Determine which stage we are at based on count
+            // We want to expand when we reach thresholds: ceil(1*total/5), ceil(2*total/5), etc.
+            for (let s = 1; s < this.TOTAL_EXPANSIONS; s++) {
+                const threshold = Math.ceil((s) * totalBuildings / this.TOTAL_EXPANSIONS);
+                // If we JUST reached the exact threshold, expand
+                if (conqueredCount === threshold) {
+                    this.mapGrid.discoveryRadius = this.RADII[s];
+                    const centerX = Math.floor(this.gridSize / 2);
+                    const centerY = Math.floor(this.gridSize / 2);
+                    this.mapGrid.updateDiscoveryFromCenter(centerX, centerY);
+                    break;
+                }
+            }
+            
+            // Final reveal if all conquered
+            if (conqueredCount === totalBuildings) {
+                this.mapGrid.discoveryRadius = this.RADII[this.TOTAL_EXPANSIONS - 1];
+                const centerX = Math.floor(this.gridSize / 2);
+                const centerY = Math.floor(this.gridSize / 2);
+                this.mapGrid.updateDiscoveryFromCenter(centerX, centerY);
+            }
+
             this.score += 100;
             
             // Redraw map to show conquered building and new area
