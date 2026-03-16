@@ -15,6 +15,7 @@ export class MapScene extends Scene {
     private score: number = 0;
     private isTutorialActive: boolean = true;
     private tutorialContainer: Phaser.GameObjects.Container | null = null;
+    private questionNumberTexts: Phaser.GameObjects.Text[] = [];
 
     constructor() {
         super('MapScene');
@@ -92,6 +93,10 @@ export class MapScene extends Scene {
     private drawMap() {
         this.graphics.clear();
 
+        // Clear previous question number texts
+        this.questionNumberTexts.forEach(text => text.destroy());
+        this.questionNumberTexts = [];
+
         // Draw tiles
         for (let x = 0; x < this.gridSize; x++) {
             for (let y = 0; y < this.gridSize; y++) {
@@ -130,11 +135,21 @@ export class MapScene extends Scene {
                 );
             }
 
-            // Note: In a real game, you might want to use a separate text pool
-            // For now, let's just make sure we only draw text if discovered
-            // But since this is called every drawMap, we should be careful with text objects.
-            // Actually, the original code was creating text objects in drawMap which is BAD for performance.
-            // I'll keep it for now as it was there, but it's something to improve.
+            // Add question number indicator
+            const numberText = this.add.text(
+                building.x * this.tileSize + this.tileSize / 2,
+                building.y * this.tileSize + this.tileSize / 2,
+                building.questionNumber.toString(),
+                {
+                    fontSize: '16px',
+                    color: '#ffffff',
+                    backgroundColor: '#000000',
+                    padding: { x: 4, y: 2 }
+                }
+            );
+            numberText.setOrigin(0.5);
+            numberText.setDepth(5); // Between background (0) and buildings (10)
+            this.questionNumberTexts.push(numberText);
         });
     }
 
@@ -147,10 +162,10 @@ export class MapScene extends Scene {
             return;
         }
 
-        // Pick a random question
-        const question = categoryQuestions[Math.floor(Math.random() * categoryQuestions.length)];
+        // Use stored question index (assigned during generation)
+        const question = categoryQuestions[building.questionIndex];
 
-        // Launch quiz scene
+        // Launch quiz scene with persistent question
         this.scene.launch('QuizScene', {
             question: question,
             building: building,
