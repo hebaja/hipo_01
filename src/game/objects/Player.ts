@@ -54,9 +54,9 @@ export class Player {
             moved = true;
         }
 
-        // Bounds checking
+        // Bounds checking and discovery checking
         if (newX >= 0 && newX < mapGrid.width && newY >= 0 && newY < mapGrid.height) {
-            if (moved) {
+            if (moved && mapGrid.isTileDiscovered(newX, newY)) {
                 this.gridX = newX;
                 this.gridY = newY;
                 this.updatePosition();

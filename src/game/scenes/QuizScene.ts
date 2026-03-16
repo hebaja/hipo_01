@@ -108,6 +108,27 @@ export class QuizScene extends Scene {
         });
         instructionText.setOrigin(0.5);
         instructionText.setScrollFactor(0);
+
+        // Close button (X)
+        const closeButton = this.add.text(panelX + panelWidth / 2 - 20, panelY - panelHeight / 2 + 20, 'X', {
+            fontSize: '24px',
+            color: '#ff0000',
+            fontStyle: 'bold'
+        }).setOrigin(0.5).setInteractive();
+        closeButton.setScrollFactor(0);
+
+        closeButton.on('pointerdown', () => {
+            this.scene.stop();
+            this.mapScene.onQuizComplete(null, this.building);
+        });
+
+        closeButton.on('pointerover', () => {
+            closeButton.setColor('#ff8888');
+        });
+
+        closeButton.on('pointerout', () => {
+            closeButton.setColor('#ff0000');
+        });
     }
 
     private selectAnswer(selectedIndex: number) {

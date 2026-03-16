@@ -13,11 +13,16 @@ export class MapGrid {
     public width: number;
     public height: number;
     public tileSize: number;
+    public discovered: boolean[][];
 
     constructor(width: number, height: number, tileSize: number, buildingCount: number) {
         this.width = width;
         this.height = height;
         this.tileSize = tileSize;
+        
+        // Initialize discovery grid
+        this.discovered = Array(width).fill(null).map(() => Array(height).fill(false));
+        
         this.generateBuildings(buildingCount);
     }
 
@@ -63,5 +68,24 @@ export class MapGrid {
 
     public getTotalCount(): number {
         return this.grid.length;
+    }
+
+    public isTileDiscovered(x: number, y: number): boolean {
+        if (x < 0 || x >= this.width || y < 0 || y >= this.height) return false;
+        return this.discovered[x][y];
+    }
+
+    public revealArea(centerX: number, centerY: number, radius: number) {
+        for (let x = centerX - radius; x <= centerX + radius; x++) {
+            for (let y = centerY - radius; y <= centerY + radius; y++) {
+                if (x >= 0 && x < this.width && y >= 0 && y < this.height) {
+                    // Simple square reveal for now, or could use distance for circle
+                    const distance = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
+                    if (distance <= radius) {
+                        this.discovered[x][y] = true;
+                    }
+                }
+            }
+        }
     }
 }

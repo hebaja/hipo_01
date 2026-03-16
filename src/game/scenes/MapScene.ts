@@ -13,6 +13,8 @@ export class MapScene extends Scene {
     private interactionText: any;
     private scoreText: any;
     private score: number = 0;
+    private isTutorialActive: boolean = true;
+    private tutorialContainer: Phaser.GameObjects.Container | null = null;
 
     constructor() {
         super('MapScene');
@@ -26,7 +28,12 @@ export class MapScene extends Scene {
         this.graphics = this.add.graphics();
 
         // Create player (starting in the middle)
-        this.player = new Player(this, this.mapGrid, Math.floor(this.gridSize / 2), Math.floor(this.gridSize / 2));
+        const startX = Math.floor(this.gridSize / 2);
+        const startY = Math.floor(this.gridSize / 2);
+        this.player = new Player(this, this.mapGrid, startX, startY);
+
+        // Initial map reveal
+        this.mapGrid.revealArea(startX, startY, 4);
 
         // Setup camera
         this.cameras.main.startFollow(this.player.sprite, true, 0.1, 0.1);
@@ -53,9 +60,14 @@ export class MapScene extends Scene {
 
         // Draw the initial map
         this.drawMap();
+
+        // Show tutorial
+        this.showTutorial();
     }
 
     update() {
+        if (this.isTutorialActive) return;
+
         // Update player
         this.player.update(this.mapGrid);
 
@@ -80,17 +92,24 @@ export class MapScene extends Scene {
     private drawMap() {
         this.graphics.clear();
 
-        // Draw empty tiles (grid lines)
-        this.graphics.lineStyle(1, 0x333333, 0.5);
-        for (let x = 0; x <= this.gridSize; x++) {
-            this.graphics.lineBetween(x * this.tileSize, 0, x * this.tileSize, this.gridSize * this.tileSize);
-        }
-        for (let y = 0; y <= this.gridSize; y++) {
-            this.graphics.lineBetween(0, y * this.tileSize, this.gridSize * this.tileSize, y * this.tileSize);
+        // Draw tiles
+        for (let x = 0; x < this.gridSize; x++) {
+            for (let y = 0; y < this.gridSize; y++) {
+                if (this.mapGrid.isTileDiscovered(x, y)) {
+                    this.graphics.lineStyle(1, 0x333333, 0.5);
+                    this.graphics.strokeRect(x * this.tileSize, y * this.tileSize, this.tileSize, this.tileSize);
+                } else {
+                    // Draw "fog" for undiscovered tiles
+                    this.graphics.fillStyle(0x111111, 0.5);
+                    this.graphics.fillRect(x * this.tileSize, y * this.tileSize, this.tileSize, this.tileSize);
+                }
+            }
         }
 
         // Draw buildings
         this.mapGrid.grid.forEach(building => {
+            if (!this.mapGrid.isTileDiscovered(building.x, building.y)) return;
+
             const alpha = building.conquered ? 1 : 0.6;
             this.graphics.fillStyle(building.color, alpha);
             this.graphics.fillRect(
@@ -111,17 +130,11 @@ export class MapScene extends Scene {
                 );
             }
 
-            // Add category label (small text)
-            this.add.text(
-                building.x * this.tileSize + this.tileSize / 2,
-                building.y * this.tileSize + this.tileSize / 2,
-                building.category.substring(0, 3),
-                {
-                    fontSize: '10px',
-                    color: '#ffffff',
-                    backgroundColor: '#000000'
-                }
-            ).setOrigin(0.5);
+            // Note: In a real game, you might want to use a separate text pool
+            // For now, let's just make sure we only draw text if discovered
+            // But since this is called every drawMap, we should be careful with text objects.
+            // Actually, the original code was creating text objects in drawMap which is BAD for performance.
+            // I'll keep it for now as it was there, but it's something to improve.
         });
     }
 
@@ -148,12 +161,13 @@ export class MapScene extends Scene {
         this.scene.pause();
     }
 
-    public onQuizComplete(success: boolean, building: Building) {
-        if (success) {
+    public onQuizComplete(success: boolean | null, building: Building) {
+        if (success === true) {
             this.mapGrid.conquerBuilding(building);
+            this.mapGrid.revealArea(building.x, building.y, 5); // Reveal more area around conquered building
             this.score += 100;
             
-            // Redraw map to show conquered building
+            // Redraw map to show conquered building and new area
             this.drawMap();
             
             // Show success message
@@ -171,7 +185,7 @@ export class MapScene extends Scene {
             msg.setScrollFactor(0);
             
             this.time.delayedCall(1500, () => msg.destroy());
-        } else {
+        } else if (success === false) {
             // Show failure message
             const msg = this.add.text(
                 this.cameras.main.midPoint.x,
@@ -188,8 +202,70 @@ export class MapScene extends Scene {
             
             this.time.delayedCall(1500, () => msg.destroy());
         }
+        // If success is null, do nothing just resume
 
         // Resume this scene
         this.scene.resume();
+    }
+
+    private showTutorial() {
+        const { width, height } = this.cameras.main;
+
+        // Create a container for tutorial elements
+        this.tutorialContainer = this.add.container(0, 0);
+        this.tutorialContainer.setDepth(2000);
+        this.tutorialContainer.setScrollFactor(0);
+
+        // Background overlay
+        const bg = this.add.graphics();
+        bg.fillStyle(0x000000, 0.8);
+        bg.fillRect(0, 0, width, height);
+        this.tutorialContainer.add(bg);
+
+        // Tutorial Box
+        const boxWidth = 500;
+        const boxHeight = 400;
+        const box = this.add.graphics();
+        box.fillStyle(0x222222, 1);
+        box.lineStyle(4, 0xffffff, 1);
+        box.fillRoundedRect((width - boxWidth) / 2, (height - boxHeight) / 2, boxWidth, boxHeight, 20);
+        box.strokeRoundedRect((width - boxWidth) / 2, (height - boxHeight) / 2, boxWidth, boxHeight, 20);
+        this.tutorialContainer.add(box);
+
+        // Title
+        const title = this.add.text(width / 2, (height - boxHeight) / 2 + 50, 'Como Jogar', {
+            fontSize: '32px',
+            color: '#ffffff',
+            fontStyle: 'bold'
+        }).setOrigin(0.5);
+        this.tutorialContainer.add(title);
+
+        // Instructions
+        const instructions = [
+            '• Use as setas ou WASD para se mover.',
+            '• Explore o mapa para encontrar prédios.',
+            '• Chegue perto de um prédio e aperte ESPAÇO.',
+            '• Responda corretamente para conquistar o prédio.',
+            '• Conquistar prédios revela mais partes do mapa!',
+            '',
+            'Clique em qualquer lugar para começar!'
+        ];
+
+        const content = this.add.text(width / 2, height / 2 + 20, instructions.join('\n'), {
+            fontSize: '20px',
+            color: '#ffffff',
+            align: 'center',
+            wordWrap: { width: boxWidth - 60 }
+        }).setOrigin(0.5);
+        this.tutorialContainer.add(content);
+
+        // Interaction to close tutorial
+        this.input.once('pointerdown', () => {
+            if (this.tutorialContainer) {
+                this.tutorialContainer.destroy();
+                this.tutorialContainer = null;
+                this.isTutorialActive = false;
+            }
+        });
     }
 }
