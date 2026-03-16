@@ -10,7 +10,7 @@ export class Game extends Scene
     preload ()
     {
         this.load.setPath('assets');
-        
+    
     }
 
     create ()
