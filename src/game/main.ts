@@ -1,4 +1,5 @@
-import { Game as MainGame } from './scenes/Game';
+import { MapScene } from './scenes/MapScene';
+import { QuizScene } from './scenes/QuizScene';
 import { AUTO, Game, Scale,Types } from 'phaser';
 
 // Find out more information about the Game Config at:
@@ -8,7 +9,7 @@ const config: Types.Core.GameConfig = {
     width: 1024,
     height: 768,
     parent: 'game-container',
-    backgroundColor: '#028af8',
+    backgroundColor: '#1a1a2e',
     physics: {
         default: 'arcade'
     },
@@ -17,7 +18,8 @@ const config: Types.Core.GameConfig = {
         autoCenter: Scale.CENTER_BOTH
     },
     scene: [
-        MainGame
+        MapScene,
+        QuizScene
     ]
 };
 
