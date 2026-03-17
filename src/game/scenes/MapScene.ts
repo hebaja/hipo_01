@@ -12,6 +12,10 @@ import buttonLongBeigePressedPng from '../../assets/ui/PNG/buttonLong_beige_pres
 import iconCrossBrownPng from '../../assets/ui/PNG/iconCross_brown.png';
 import cursorGauntletPng from '../../assets/ui/PNG/cursorGauntlet_bronze.png';
 
+// Board Game Icons Assets
+import iconAwardPng from '../../assets/icons/PNG/Default (64px)/award.png';
+import iconCrownPng from '../../assets/icons/PNG/Default (64px)/crown_a.png';
+
 export class MapScene extends Scene {
     private mapGrid: MapGrid;
     private player: Player;
@@ -31,10 +35,9 @@ export class MapScene extends Scene {
     private RADII = [2, 4, 6, 8, 11, 15]; // Gradual radii for visiblity on 20x20 grid
     
     // Badge system properties
-    private badges: Phaser.GameObjects.Graphics[] = [];
+    private badges: Phaser.GameObjects.Image[] = [];
     private badgeCount: number = 0;
     private readonly TOTAL_BADGES: number = 6; // 5 expansion + 1 special
-    private readonly BADGE_SIZE: number = 14; // Radius reduced (was 18)
     private readonly BADGE_SPACING: number = 34; // Spacing increased (was 28, then 22, then 24)
 
     constructor() {
@@ -49,6 +52,10 @@ export class MapScene extends Scene {
         this.load.image('buttonLong_beige', buttonLongBeigePng);
         this.load.image('buttonLong_beige_pressed', buttonLongBeigePressedPng);
         this.load.image('iconCross_brown', iconCrossBrownPng);
+
+        // Load Icon Assets
+        this.load.image('iconAward', iconAwardPng);
+        this.load.image('iconCrown', iconCrownPng);
     }
 
     create() {
@@ -219,8 +226,8 @@ export class MapScene extends Scene {
     }
 
     private drawBadges(): void {
-        // Clear existing badge graphics
-        this.badges.forEach((badge: Phaser.GameObjects.Graphics) => badge.destroy());
+        // Clear existing badge images
+        this.badges.forEach((badge: Phaser.GameObjects.Image) => badge.destroy());
         this.badges = [];
 
         // Calculate positioning at bottom of HUD (left-aligned)
@@ -229,22 +236,26 @@ export class MapScene extends Scene {
 
         // Draw each badge
         for (let i = 0; i < this.TOTAL_BADGES; i++) {
-            const badge = this.add.graphics();
             const x = startX + i * this.BADGE_SPACING;
             const y = hudBottomY;
 
+            // Determine if it's the 6th badge (index 5)
+            const isFinalBadge = (i === this.TOTAL_BADGES - 1);
+            const texture = isFinalBadge ? 'iconCrown' : 'iconAward';
+            
+            const badge = this.add.image(x, y, texture);
+            
+            // The icons are 64x64. Scale to 32x32 to fit the HUD nicely.
+            badge.setScale(0.5);
+
             if (i < this.badgeCount) {
-                // Earned badge: golden circle with orange border
-                badge.fillStyle(0xFFD700, 1); // Gold
-                badge.fillCircle(x, y, this.BADGE_SIZE);
-                badge.lineStyle(2, 0xFFA500, 1); // Orange border
-                badge.strokeCircle(x, y, this.BADGE_SIZE);
+                // Earned badge: Normal color, fully opaque
+                badge.clearTint();
+                badge.setAlpha(1);
             } else {
                 // Locked badge: dark gray with transparency
-                badge.fillStyle(0x333333, 0.4);
-                badge.fillCircle(x, y, this.BADGE_SIZE);
-                badge.lineStyle(1, 0x555555, 0.4);
-                badge.strokeCircle(x, y, this.BADGE_SIZE);
+                badge.setTint(0x333333);
+                badge.setAlpha(0.4);
             }
 
             badge.setScrollFactor(0);
