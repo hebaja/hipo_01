@@ -2,6 +2,8 @@ import { Scene } from 'phaser';
 import { Question } from '../data/questions';
 import { Building } from '../data/buildings';
 import { MapScene } from './MapScene';
+import cursorGauntletPng from '../../assets/ui/PNG/cursorGauntlet_bronze.png';
+import cursorHandPng from '../../assets/ui/PNG/cursorHand_beige.png';
 
 export class QuizScene extends Scene {
     private question!: Question;
@@ -20,6 +22,9 @@ export class QuizScene extends Scene {
     }
 
     create() {
+        // Set custom default cursor
+        this.input.setDefaultCursor(`url(${cursorGauntletPng}), default`);
+
         // Clear any existing buttons from previous sessions
         this.optionButtons = [];
 
@@ -34,15 +39,22 @@ export class QuizScene extends Scene {
         );
         overlay.setScrollFactor(0);
 
-        // Quiz panel background
+        // Quiz panel background (using NineSlice instead of Rectangle)
         const panelWidth = 500;
         const panelHeight = 300;
         const panelX = this.cameras.main.width / 2;
         const panelY = this.cameras.main.height / 2;
 
-        const panel = this.add.rectangle(panelX, panelY, panelWidth, panelHeight, 0x333333, 1);
+        const panel = this.add.nineslice(
+            panelX, 
+            panelY, 
+            'panel_brown', 
+            0, 
+            panelWidth, 
+            panelHeight,
+            32, 32, 32, 32
+        );
         panel.setScrollFactor(0);
-        panel.setStrokeStyle(2, 0xffffff);
 
         // Question text
         const questionText = this.add.text(panelX, panelY - 80, this.question.question, {
@@ -105,14 +117,23 @@ export class QuizScene extends Scene {
             const option = this.question.options[originalIndex];
             const buttonY = startY + displayIndex * (buttonHeight + spacing);
             
-            const button = this.add.rectangle(panelX, buttonY, buttonWidth, buttonHeight, 0x555555, 1);
+            // Use nineslice image for button
+            const button = this.add.nineslice(
+                panelX, 
+                buttonY, 
+                'buttonLong_beige', 
+                0, 
+                buttonWidth, 
+                buttonHeight,
+                15, 15, 15, 15
+            );
             button.setScrollFactor(0);
-            button.setStrokeStyle(1, 0x888888);
-            button.setInteractive();
+            button.setInteractive({ cursor: `url(${cursorHandPng}), pointer` });
             
             const buttonText = this.add.text(panelX, buttonY, option, {
-                fontSize: '16px',
-                color: '#ffffff'
+                fontSize: '18px',
+                color: '#5c4033', // Dark brown to contrast with beige
+                fontStyle: 'bold'
             });
             buttonText.setOrigin(0.5);
             buttonText.setScrollFactor(0);
@@ -125,13 +146,13 @@ export class QuizScene extends Scene {
                 this.selectAnswer(originalIndex);
             });
             
-            // Hover effect
+            // Hover effect (change texture to pressed version)
             button.on('pointerover', () => {
-                button.setFillStyle(0x777777, 1);
+                button.setTexture('buttonLong_beige_pressed');
             });
             
             button.on('pointerout', () => {
-                button.setFillStyle(0x555555, 1);
+                button.setTexture('buttonLong_beige');
             });
         });
 
@@ -143,12 +164,11 @@ export class QuizScene extends Scene {
         instructionText.setOrigin(0.5);
         instructionText.setScrollFactor(0);
 
-        // Close button (X)
-        const closeButton = this.add.text(panelX + panelWidth / 2 - 20, panelY - panelHeight / 2 + 20, 'X', {
-            fontSize: '24px',
-            color: '#ff0000',
-            fontStyle: 'bold'
-        }).setOrigin(0.5).setInteractive();
+        // Close button (Icon image instead of text)
+        // Adjust position relative to the panel corners
+        const closeButton = this.add.image(panelX + panelWidth / 2 - 24, panelY - panelHeight / 2 + 24, 'iconCross_brown')
+            .setInteractive({ cursor: `url(${cursorHandPng}), pointer` })
+            .setOrigin(0.5);
         closeButton.setScrollFactor(0);
 
         closeButton.on('pointerdown', () => {
@@ -156,12 +176,13 @@ export class QuizScene extends Scene {
             this.mapScene.onQuizComplete(null, this.building);
         });
 
+        // Add visual cue on hover
         closeButton.on('pointerover', () => {
-            closeButton.setColor('#ff8888');
+             closeButton.setTint(0xffbbbb); // Light red tint
         });
 
         closeButton.on('pointerout', () => {
-            closeButton.setColor('#ff0000');
+             closeButton.clearTint();
         });
     }
 
@@ -177,7 +198,7 @@ export class QuizScene extends Scene {
             // Show success feedback for correct answers
             const correctButtonData = this.optionButtons.find(btn => btn.index === selectedIndex);
             if (correctButtonData) {
-                correctButtonData.button.setFillStyle(0x00aa00, 1);
+                correctButtonData.button.setTint(0x77ff77); // Green tint
             }
             
             const resultText = this.add.text(
@@ -207,7 +228,7 @@ export class QuizScene extends Scene {
             // Highlight the selected wrong option in red
             const selectedButtonData = this.optionButtons.find(btn => btn.index === selectedIndex);
             if (selectedButtonData) {
-                selectedButtonData.button.setFillStyle(0xaa0000, 1); // Red color
+                selectedButtonData.button.setTint(0xff7777); // Red tint
             }
             
             // Wait briefly before closing (500ms for visual feedback)

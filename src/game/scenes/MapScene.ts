@@ -4,6 +4,14 @@ import { Player } from '../objects/Player';
 import { quizQuestions } from '../data/questions';
 import maleAdventurerPng from '../../assets/sprites/Male adventurer/Tilesheet/character_maleAdventurer_sheet.png';
 import maleAdventurerXml from '../../assets/sprites/Male adventurer/Tilesheet/character_maleAdventurer_sheet.xml?url';
+
+// UI Assets
+import panelBrownPng from '../../assets/ui/PNG/panel_brown.png';
+import buttonLongBeigePng from '../../assets/ui/PNG/buttonLong_beige.png';
+import buttonLongBeigePressedPng from '../../assets/ui/PNG/buttonLong_beige_pressed.png';
+import iconCrossBrownPng from '../../assets/ui/PNG/iconCross_brown.png';
+import cursorGauntletPng from '../../assets/ui/PNG/cursorGauntlet_bronze.png';
+
 export class MapScene extends Scene {
     private mapGrid: MapGrid;
     private player: Player;
@@ -35,9 +43,18 @@ export class MapScene extends Scene {
 
     preload() {
         this.load.atlasXML('maleAdventurer', maleAdventurerPng, maleAdventurerXml);
+
+        // Load UI Panel & Buttons
+        this.load.image('panel_brown', panelBrownPng);
+        this.load.image('buttonLong_beige', buttonLongBeigePng);
+        this.load.image('buttonLong_beige_pressed', buttonLongBeigePressedPng);
+        this.load.image('iconCross_brown', iconCrossBrownPng);
     }
 
     create() {
+        // Set custom default cursor
+        this.input.setDefaultCursor(`url(${cursorGauntletPng}), default`);
+
         // Initialize map grid
         this.mapGrid = new MapGrid(this.gridSize, this.gridSize, this.tileSize);
         
@@ -360,14 +377,20 @@ export class MapScene extends Scene {
         bg.fillRect(0, 0, width, height);
         this.tutorialContainer.add(bg);
 
-        // Tutorial Box
+        // Tutorial Box using NineSlice
         const boxWidth = 500;
         const boxHeight = 400;
-        const box = this.add.graphics();
-        box.fillStyle(0x222222, 1);
-        box.lineStyle(4, 0xffffff, 1);
-        box.fillRoundedRect((width - boxWidth) / 2, (height - boxHeight) / 2, boxWidth, boxHeight, 20);
-        box.strokeRoundedRect((width - boxWidth) / 2, (height - boxHeight) / 2, boxWidth, boxHeight, 20);
+        
+        // panel_brown.png is typically 100x100 with corners taking roughly 30px
+        const box = this.add.nineslice(
+            width / 2, 
+            height / 2, 
+            'panel_brown', 
+            0, // frame
+            boxWidth, 
+            boxHeight, 
+            32, 32, 32, 32 // Left, Right, Top, Bottom margins
+        );
         this.tutorialContainer.add(box);
 
         // Title
