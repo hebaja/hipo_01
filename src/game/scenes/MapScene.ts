@@ -2,7 +2,8 @@ import { Scene } from 'phaser';
 import { MapGrid, Building } from '../data/buildings';
 import { Player } from '../objects/Player';
 import { quizQuestions } from '../data/questions';
-
+import maleAdventurerPng from '../../assets/sprites/Male adventurer/Tilesheet/character_maleAdventurer_sheet.png';
+import maleAdventurerXml from '../../assets/sprites/Male adventurer/Tilesheet/character_maleAdventurer_sheet.xml?url';
 export class MapScene extends Scene {
     private mapGrid: MapGrid;
     private player: Player;
@@ -32,6 +33,10 @@ export class MapScene extends Scene {
         super('MapScene');
     }
 
+    preload() {
+        this.load.atlasXML('maleAdventurer', maleAdventurerPng, maleAdventurerXml);
+    }
+
     create() {
         // Initialize map grid
         this.mapGrid = new MapGrid(this.gridSize, this.gridSize, this.tileSize);
@@ -46,6 +51,31 @@ export class MapScene extends Scene {
         const startX = Math.floor(this.gridSize / 2);
         const startY = Math.floor(this.gridSize / 2);
         this.player = new Player(this, this.mapGrid, startX, startY);
+
+        // Register player animations
+        this.anims.create({
+            key: 'player-idle',
+            frames: [{ key: 'maleAdventurer', frame: 'idle' }],
+            frameRate: 10
+        });
+
+        this.anims.create({
+            key: 'player-walk',
+            frames: [
+                { key: 'maleAdventurer', frame: 'walk0' },
+                { key: 'maleAdventurer', frame: 'walk1' },
+                { key: 'maleAdventurer', frame: 'walk2' },
+                { key: 'maleAdventurer', frame: 'walk3' },
+                { key: 'maleAdventurer', frame: 'walk4' },
+                { key: 'maleAdventurer', frame: 'walk5' },
+                { key: 'maleAdventurer', frame: 'walk6' },
+                { key: 'maleAdventurer', frame: 'walk7' }
+            ],
+            frameRate: 10,
+            repeat: -1
+        });
+
+        this.player.sprite.play('player-idle');
 
         // Initial map reveal
         this.mapGrid.discoveryRadius = this.RADII[0];
