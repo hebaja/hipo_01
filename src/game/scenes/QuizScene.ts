@@ -136,7 +136,7 @@ export class QuizScene extends Scene {
         });
 
         // Instructions text
-        const instructionText = this.add.text(panelX, panelY + 130, 'Click an option to answer', {
+        const instructionText = this.add.text(panelX, panelY + 130, 'Clique em um opção para responder', {
             fontSize: '14px',
             color: '#aaaaaa'
         });

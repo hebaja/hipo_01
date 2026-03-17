@@ -20,6 +20,13 @@ export class MapScene extends Scene {
 
     private TOTAL_EXPANSIONS = 6; // 6 stages: Initial + 5 expansions
     private RADII = [2, 4, 6, 8, 11, 15]; // Gradual radii for visiblity on 20x20 grid
+    
+    // Badge system properties
+    private badges: Phaser.GameObjects.Graphics[] = [];
+    private badgeCount: number = 0;
+    private readonly TOTAL_BADGES: number = 6; // 5 expansion + 1 special
+    private readonly BADGE_SIZE: number = 14; // Radius reduced (was 18)
+    private readonly BADGE_SPACING: number = 34; // Spacing increased (was 28, then 22, then 24)
 
     constructor() {
         super('MapScene');
@@ -70,6 +77,9 @@ export class MapScene extends Scene {
         // Draw the initial map
         this.drawMap();
 
+        // Initialize and draw badges
+        this.drawBadges();
+
         // Show tutorial
         this.showTutorial();
     }
@@ -85,7 +95,7 @@ export class MapScene extends Scene {
         const nearbyBuilding = this.mapGrid.getBuildingAt(playerPos.x, playerPos.y);
 
         if (nearbyBuilding) {
-            this.interactionText.setText(`Press SPACE to conquer ${nearbyBuilding.category}`);
+            this.interactionText.setText(`Pressione ESPAÇO para conquistar: ${nearbyBuilding.category}`);
             
             if (this.player.isInteracting() && !nearbyBuilding.conquered) {
                 this.startQuiz(nearbyBuilding);
@@ -161,12 +171,47 @@ export class MapScene extends Scene {
         });
     }
 
+    private drawBadges(): void {
+        // Clear existing badge graphics
+        this.badges.forEach((badge: Phaser.GameObjects.Graphics) => badge.destroy());
+        this.badges = [];
+
+        // Calculate positioning at bottom of HUD (left-aligned)
+        const hudBottomY = 100; // Below score text (y=50 + 18px font + padding)
+        const startX = 20; // Left-aligned with HUD text margin
+
+        // Draw each badge
+        for (let i = 0; i < this.TOTAL_BADGES; i++) {
+            const badge = this.add.graphics();
+            const x = startX + i * this.BADGE_SPACING;
+            const y = hudBottomY;
+
+            if (i < this.badgeCount) {
+                // Earned badge: golden circle with orange border
+                badge.fillStyle(0xFFD700, 1); // Gold
+                badge.fillCircle(x, y, this.BADGE_SIZE);
+                badge.lineStyle(2, 0xFFA500, 1); // Orange border
+                badge.strokeCircle(x, y, this.BADGE_SIZE);
+            } else {
+                // Locked badge: dark gray with transparency
+                badge.fillStyle(0x333333, 0.4);
+                badge.fillCircle(x, y, this.BADGE_SIZE);
+                badge.lineStyle(1, 0x555555, 0.4);
+                badge.strokeCircle(x, y, this.BADGE_SIZE);
+            }
+
+            badge.setScrollFactor(0);
+            badge.setDepth(1000); // Same depth as other HUD elements
+            this.badges.push(badge);
+        }
+    }
+
     private startQuiz(building: Building) {
         // Filter questions by category
         const categoryQuestions = quizQuestions.filter(q => q.category === building.category);
         
         if (categoryQuestions.length === 0) {
-            console.error(`No questions found for category: ${building.category}`);
+            console.error(`Nenhuma questão encontrada para a categoria: ${building.category}`);
             return;
         }
 
@@ -211,12 +256,27 @@ export class MapScene extends Scene {
                 this.mapGrid.updateDiscoveryFromCenter(centerX, centerY);
                 
                 console.log(`Expansion Stage ${this.currentExpansionStage} triggered! (Threshold: ${conqueredCount}, Radius: ${this.mapGrid.discoveryRadius})`);
+                
+                // Award expansion badge if new stage reached (stages 1-5)
+                if (this.currentExpansionStage >= 1 && this.currentExpansionStage <= 5) {
+                    this.badgeCount = Math.max(this.badgeCount, this.currentExpansionStage);
+                    this.drawBadges();
+                }
+            }
+            
+            // Award special badge when all buildings conquered
+            if (conqueredCount === totalBuildings && this.badgeCount < 6) {
+                this.badgeCount = 6; // All badges earned
+                this.drawBadges();
             }
             
             this.score += 100;
             
             // Redraw map to show conquered building and new area
             this.drawMap();
+            
+            // Redraw badges to ensure they're on top
+            this.drawBadges();
             
             // Show success message
             const msg = this.add.text(
