@@ -1,11 +1,19 @@
 import { Scene } from 'phaser';
-import { MapGrid, Building } from '../data/buildings';
+import { MapGrid, Building, NPC } from '../data/buildings';
 import { Player } from '../objects/Player';
 import { quizQuestions } from '../data/questions';
 import maleAdventurerPng from '../../assets/sprites/Male adventurer/Tilesheet/character_maleAdventurer_sheet.png';
 import maleAdventurerXml from '../../assets/sprites/Male adventurer/Tilesheet/character_maleAdventurer_sheet.xml?url';
 
+import femalePersonPng from '../../assets/sprites/Female person/Tilesheet/character_femalePerson_sheet.png';
+import femalePersonXml from '../../assets/sprites/Female person/Tilesheet/character_femalePerson_sheet.xml?url';
+import malePersonPng from '../../assets/sprites/Male person/Tilesheet/character_malePerson_sheet.png';
+import malePersonXml from '../../assets/sprites/Male person/Tilesheet/character_malePerson_sheet.xml?url';
+import robotPng from '../../assets/sprites/Robot/Tilesheet/character_robot_sheet.png';
+import robotXml from '../../assets/sprites/Robot/Tilesheet/character_robot_sheet.xml?url';
+
 // UI Assets
+import panelBeigeLightPng from '../../assets/ui/PNG/panel_beigeLight.png';
 import panelBrownPng from '../../assets/ui/PNG/panel_brown.png';
 import buttonLongBeigePng from '../../assets/ui/PNG/buttonLong_beige.png';
 import buttonLongBeigePressedPng from '../../assets/ui/PNG/buttonLong_beige_pressed.png';
@@ -35,6 +43,9 @@ export class MapScene extends Scene {
     private questionNumberTexts: Phaser.GameObjects.Text[] = [];
     private currentExpansionStage: number = 0;
 
+    private npcSprites: Map<string, Phaser.GameObjects.Sprite> = new Map();
+    private npcBalloons: Map<string, Phaser.GameObjects.Container> = new Map();
+
     //private TOTAL_EXPANSIONS = 6; // 6 stages: Initial + 5 expansions
     private TOTAL_EXPANSIONS = 3; // 3 stages: Initial + 2 expansions
     //private RADII = [2, 4, 6, 8, 11, 15]; // Gradual radii for visiblity on 20x20 grid
@@ -54,9 +65,13 @@ export class MapScene extends Scene {
 
     preload() {
         this.load.atlasXML('maleAdventurer', maleAdventurerPng, maleAdventurerXml);
+        this.load.atlasXML('femalePerson', femalePersonPng, femalePersonXml);
+        this.load.atlasXML('malePerson', malePersonPng, malePersonXml);
+        this.load.atlasXML('robot', robotPng, robotXml);
 
         // Load UI Panel & Buttons
         this.load.image('panel_brown', panelBrownPng);
+        this.load.image('panel_beigeLight', panelBeigeLightPng);
         this.load.image('buttonLong_beige', buttonLongBeigePng);
         this.load.image('buttonLong_beige_pressed', buttonLongBeigePressedPng);
         this.load.image('iconCross_brown', iconCrossBrownPng);
@@ -77,8 +92,9 @@ export class MapScene extends Scene {
         // Initialize map grid
         this.mapGrid = new MapGrid(this.gridSize, this.gridSize, this.tileSize);
 
-        // Generate buildings in zones to guarantee progression
+        // Generate buildings and NPCs in zones to guarantee progression
         this.mapGrid.generateStagedBuildings(this.buildingCount, this.TOTAL_EXPANSIONS, this.RADII);
+        this.mapGrid.generateNPCs(this.TOTAL_EXPANSIONS, this.RADII);
 
         // Initialize and setup Tilemap
         const map = this.make.tilemap({ key: 'city-map' });
@@ -133,6 +149,21 @@ export class MapScene extends Scene {
         this.cameras.main.startFollow(this.player.sprite, true, 0.1, 0.1);
         this.cameras.main.setZoom(1);
 
+        // Register NPC animations
+        const npcTypes = ['femalePerson', 'malePerson', 'robot'];
+        npcTypes.forEach(type => {
+            this.anims.create({
+                key: `${type}-idle`,
+                frames: [{ key: type, frame: 'idle' }],
+                frameRate: 10
+            });
+            this.anims.create({
+                key: `${type}-talk`,
+                frames: [{ key: type, frame: 'talk' }],
+                frameRate: 10
+            });
+        });
+
         // Create UI elements
         this.interactionText = this.add.text(10, 10, '', {
             fontSize: '18px',
@@ -158,6 +189,9 @@ export class MapScene extends Scene {
         // Initialize and draw badges
         this.drawBadges();
 
+        // Register interaction key for NPC (in addition to buildings)
+        // Note: player.isInteracting already handles Space
+
         // Show tutorial
         this.showTutorial();
     }
@@ -168,9 +202,10 @@ export class MapScene extends Scene {
         // Update player
         this.player.update(this.mapGrid);
 
-        // Check for interaction with nearby buildings
+        // Check for interaction with nearby buildings or NPCs
         const playerPos = this.player.getPosition();
         const nearbyBuilding = this.mapGrid.getBuildingAt(playerPos.x, playerPos.y);
+        const nearbyNPC = this.mapGrid.npcs.find(npc => npc.x === playerPos.x && npc.y === playerPos.y);
 
         if (nearbyBuilding) {
             this.interactionText.setText(`Pressione ESPAÇO para conquistar: ${nearbyBuilding.category}`);
@@ -178,9 +213,48 @@ export class MapScene extends Scene {
             if (this.player.isInteracting() && !nearbyBuilding.conquered) {
                 this.startQuiz(nearbyBuilding);
             }
+        } else if (nearbyNPC) {
+            this.interactionText.setText(`Pressione ESPAÇO para falar com: ${nearbyNPC.name}`);
+
+            if (this.player.isInteracting()) {
+                this.showNPCHint(nearbyNPC);
+            }
         } else {
             this.interactionText.setText('Mova e interaja com os prédios');
         }
+
+        // Update NPC Balloons and animations
+        this.mapGrid.npcs.forEach(npc => {
+            const sprite = this.npcSprites.get(npc.name);
+            const balloon = this.npcBalloons.get(npc.name);
+            if (!sprite || !balloon) return;
+
+            const dist = Phaser.Math.Distance.Between(playerPos.x, playerPos.y, npc.x, npc.y);
+            
+            // Show balloon and play talk anim if close, otherwise idle
+            // Also ensure the NPC is discovered first
+            const isDiscovered = this.mapGrid.isTileDiscovered(npc.x, npc.y);
+            if (dist <= 3 && isDiscovered) {
+                if (!balloon.visible) {
+                    balloon.setVisible(true);
+                    sprite.play(`${npc.type}-talk`);
+                    // Floating effect for balloon
+                    this.tweens.add({
+                        targets: balloon,
+                        y: npc.y * this.tileSize - 20,
+                        duration: 600,
+                        yoyo: true,
+                        repeat: -1,
+                        ease: 'Sine.easeInOut'
+                    });
+                }
+            } else {
+                balloon.setVisible(false);
+                sprite.play(`${npc.type}-idle`);
+                this.tweens.killTweensOf(balloon);
+                balloon.y = npc.y * this.tileSize - 10;
+            }
+        });
 
         // Update score display
         this.scoreText.setText(`Score: ${this.score} | Conquistado: ${this.mapGrid.getConqueredCount()}/${this.mapGrid.getTotalCount()}`);
@@ -243,6 +317,49 @@ export class MapScene extends Scene {
             numberText.setOrigin(0.5);
             numberText.setDepth(5); // Between background (0) and buildings (10)
             this.questionNumberTexts.push(numberText);
+        });
+
+        // Update/Create NPC Sprites and Balloons
+        this.mapGrid.npcs.forEach(npc => {
+            const isDiscovered = this.mapGrid.isTileDiscovered(npc.x, npc.y);
+            
+            let sprite = this.npcSprites.get(npc.name);
+            let balloon = this.npcBalloons.get(npc.name);
+
+            if (!sprite) {
+                // Create new sprite
+                sprite = this.add.sprite(
+                    npc.x * this.tileSize + this.tileSize / 2,
+                    npc.y * this.tileSize + this.tileSize / 2,
+                    npc.type,
+                    'idle'
+                );
+                sprite.setScale(this.tileSize / 128); // Standard character sheets are ~128px high
+                sprite.setDepth(15);
+                this.npcSprites.set(npc.name, sprite);
+
+                // Create Speech Balloon
+                balloon = this.add.container(
+                    npc.x * this.tileSize + this.tileSize / 2,
+                    npc.y * this.tileSize - 10
+                );
+                
+                const bg = this.add.image(0, 0, 'panel_beigeLight').setScale(0.25).setAlpha(0.9);
+                const dots = this.add.text(0, -5, '...', { 
+                    fontSize: '24px', 
+                    color: '#000000', 
+                    fontStyle: 'bold' 
+                }).setOrigin(0.5);
+                
+                balloon.add([bg, dots]);
+                balloon.setDepth(20);
+                balloon.setVisible(false);
+                this.npcBalloons.set(npc.name, balloon);
+            }
+
+            // Sync visibility with discovery
+            sprite.setVisible(isDiscovered);
+            // Balloon visibility is also handled in update() based on proximity
         });
     }
 
@@ -392,11 +509,99 @@ export class MapScene extends Scene {
             msg.setScrollFactor(0);
 
             this.time.delayedCall(1500, () => msg.destroy());
+
+            // Track this as the most recently failed building globally and per-stage
+            this.mapGrid.lastFailedBuilding = building;
+            this.mapGrid.lastFailedBuildingByStage[building.stage] = building;
+            console.log(`[HINT] Most recent error recorded: ${building.category} at (${building.x}, ${building.y})`);
         }
         // If success is null, do nothing just resume
 
         // Resume this scene
         this.scene.resume();
+    }
+
+    private showNPCHint(npc: NPC) {
+        // Find the best building to give a hint for
+        let buildingWithError: Building | null = null;
+
+        // 1. Highest priority: The global most recent error (if it's in this NPC's stage)
+        const globalRecent = this.mapGrid.lastFailedBuilding;
+        if (globalRecent && globalRecent.stage === npc.stage && !globalRecent.conquered) {
+            buildingWithError = globalRecent;
+        }
+
+        // 2. Second priority: The most recent error specifically for this stage
+        if (!buildingWithError) {
+            const stageRecent = this.mapGrid.lastFailedBuildingByStage[npc.stage];
+            if (stageRecent && !stageRecent.conquered) {
+                buildingWithError = stageRecent;
+            }
+        }
+
+        // 3. Last fallback: Find ANY building with errors in this stage
+        if (!buildingWithError) {
+            buildingWithError = this.mapGrid.grid.find(b =>
+                b.stage === npc.stage &&
+                b.wrongAttempts > 0 &&
+                !b.conquered
+            ) || null;
+        }
+
+        let message = '';
+        if (buildingWithError) {
+            const categoryQuestions = quizQuestions.filter(q => q.category === buildingWithError.category);
+            const question = categoryQuestions[buildingWithError.questionIndex];
+
+            // Get the current hint from the 5-hint sequence and increment
+            const hint = question.hints[buildingWithError.lastHintIndex % 5];
+            buildingWithError.lastHintIndex++;
+
+            message = `${npc.name}: Percebi que você teve dificuldade em ${buildingWithError.category}.\n\nDica: ${hint}`;
+        } else {
+            message = `${npc.name}: Você está indo muito bem nesta área!\nContinue explorando as redondezas.`;
+        }
+
+        // Show hint dialog
+        const hintBox = this.add.container(
+            this.cameras.main.midPoint.x,
+            this.cameras.main.midPoint.y - 120
+        ).setScrollFactor(0).setDepth(2000);
+
+        const text = this.add.text(0, 0, message, {
+            fontSize: '18px',
+            color: '#ffffff',
+            backgroundColor: '#000000',
+            padding: { x: 15, y: 10 },
+            wordWrap: { width: 350 },
+            align: 'center'
+        }).setOrigin(0.5);
+
+        hintBox.add(text);
+
+        // Simple animation
+        hintBox.setAlpha(0);
+        this.tweens.add({
+            targets: hintBox,
+            alpha: 1,
+            y: this.cameras.main.midPoint.y - 150,
+            duration: 300,
+            ease: 'Power2'
+        });
+
+        // Auto destroy
+        this.time.delayedCall(5000, () => {
+            if (this.scene.isActive()) {
+                this.tweens.add({
+                    targets: hintBox,
+                    alpha: 0,
+                    duration: 300,
+                    onComplete: () => hintBox.destroy()
+                });
+            } else {
+                hintBox.destroy();
+            }
+        });
     }
 
     private showTutorial() {

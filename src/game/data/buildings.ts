@@ -9,10 +9,23 @@ export interface Building {
     questionIndex: number;
     questionNumber: number;
     wrongAttempts: number;
+    stage: number;
+    lastHintIndex: number;
+}
+
+export interface NPC {
+    x: number;
+    y: number;
+    stage: number;
+    name: string;
+    type: string;
 }
 
 export class MapGrid {
     public grid: Building[] = [];
+    public npcs: NPC[] = [];
+    public lastFailedBuilding: Building | null = null;
+    public lastFailedBuildingByStage: { [stage: number]: Building | null } = {};
     public width: number;
     public height: number;
     public tileSize: number;
@@ -84,7 +97,9 @@ export class MapGrid {
                         conquered: false,
                         questionIndex: questionIndex,
                         questionNumber: questionNumber,
-                        wrongAttempts: 0
+                        wrongAttempts: 0,
+                        stage: s,
+                        lastHintIndex: 0
                     });
                     placedInStage++;
                 }
@@ -137,6 +152,57 @@ export class MapGrid {
         for (let x = 0; x < this.width; x++) {
             for (let y = 0; y < this.height; y++) {
                 this.discovered[x][y] = true;
+            }
+        }
+    }
+
+    public generateNPCs(stages: number, radii: number[]) {
+        this.npcs = []; // Clear existing NPCs to prevent duplicates
+        const positions = new Set<string>();
+        // Add building positions to avoid them
+        this.grid.forEach(b => positions.add(`${b.x},${b.y}`));
+
+        const centerX = Math.floor(this.width / 2);
+        const centerY = Math.floor(this.height / 2);
+
+        for (let s = 0; s < stages; s++) {
+            const innerRadius = s === 0 ? 0 : radii[s - 1];
+            const outerRadius = radii[s];
+
+            let placed = false;
+            let attempts = 0;
+            while (!placed && attempts < 200) {
+                attempts++;
+                const x = Math.floor(Math.random() * this.width);
+                const y = Math.floor(Math.random() * this.height);
+                const posKey = `${x},${y}`;
+
+                if (positions.has(posKey)) continue;
+
+                const distance = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
+                
+                // Use slightly more exclusive boundaries to prevent overlap between stages
+                const isWithinZone = s === 0 
+                    ? distance < outerRadius 
+                    : distance >= innerRadius && distance < outerRadius;
+
+                if (isWithinZone) {
+                    positions.add(posKey); // Mark this position as taken (avoids NPC overlap too)
+                    
+                    // Assign different character types based on stage
+                    let type = 'femalePerson';
+                    if (s === 1) type = 'malePerson';
+                    if (s === 2) type = 'robot';
+
+                    this.npcs.push({
+                        x,
+                        y,
+                        stage: s,
+                        name: `Mentor Estágio ${s + 1}`,
+                        type: type
+                    });
+                    placed = true;
+                }
             }
         }
     }
