@@ -416,6 +416,12 @@ export class MapScene extends Scene {
                 building: building,
                 mapScene: this
             });
+        } else if (building.challengeType === 'wordSearch') {
+            // Launch Word Search scene
+            this.scene.launch('WordSearchScene', {
+                building: building,
+                mapScene: this
+            });
         } else {
             // Filter questions by category
             const categoryQuestions = quizQuestions.filter(q => q.category === building.category);

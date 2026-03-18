@@ -9,17 +9,7 @@ export interface Building {
     questionIndex: number;
     questionNumber: number;
     wrongAttempts: number;
-    stage: number;
-    lastHintIndex: number;
-}
-
-export interface NPC {
-    x: number;
-    y: number;
-    stage: number;
-    name: string;
-    type: string;
-    challengeType: 'quiz' | 'anagram' | 'twoTruthsOneLie';
+    challengeType: 'quiz' | 'anagram' | 'twoTruthsOneLie' | 'wordSearch';
 }
 
 export class MapGrid {
@@ -53,9 +43,9 @@ export class MapGrid {
             categoryQuestionCount[cat.name] = 0;
         });
 
-        // Calculate challenge type distribution (even split between 3 types)
-        const types: ('quiz' | 'anagram' | 'twoTruthsOneLie')[] = ['quiz', 'anagram', 'twoTruthsOneLie'];
-        const challengeTypes: ('quiz' | 'anagram' | 'twoTruthsOneLie')[] = [];
+        // Calculate challenge type distribution (even split between 4 types)
+        const types: ('quiz' | 'anagram' | 'twoTruthsOneLie' | 'wordSearch')[] = ['quiz', 'anagram', 'twoTruthsOneLie', 'wordSearch'];
+        const challengeTypes: ('quiz' | 'anagram' | 'twoTruthsOneLie' | 'wordSearch')[] = [];
         
         // Distribute evenly (round-robin)
         for (let i = 0; i < totalCount; i++) {
