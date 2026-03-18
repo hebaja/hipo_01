@@ -16,12 +16,16 @@ import cursorGauntletPng from '../../assets/ui/PNG/cursorGauntlet_bronze.png';
 import iconAwardPng from '../../assets/icons/PNG/Default (64px)/award.png';
 import iconCrownPng from '../../assets/icons/PNG/Default (64px)/crown_a.png';
 
+// Tilemap Assets
+import cityTilesetPng from '../../assets/tilesets/Tilemap/tilemap_packed.png';
+import cityMapJson from '../../assets/tilemap/city_map.json?url';
+
 export class MapScene extends Scene {
     private mapGrid: MapGrid;
     private player: Player;
     private gridSize: number = 20;
     private tileSize: number = 64;
-    private buildingCount: number = 30;
+    private buildingCount: number = 6;
     private graphics: any;
     private interactionText: any;
     private scoreText: any;
@@ -31,14 +35,18 @@ export class MapScene extends Scene {
     private questionNumberTexts: Phaser.GameObjects.Text[] = [];
     private currentExpansionStage: number = 0;
 
-    private TOTAL_EXPANSIONS = 6; // 6 stages: Initial + 5 expansions
-    private RADII = [2, 4, 6, 8, 11, 15]; // Gradual radii for visiblity on 20x20 grid
+    //private TOTAL_EXPANSIONS = 6; // 6 stages: Initial + 5 expansions
+    private TOTAL_EXPANSIONS = 3; // 3 stages: Initial + 2 expansions
+    //private RADII = [2, 4, 6, 8, 11, 15]; // Gradual radii for visiblity on 20x20 grid
+    private RADII = [2, 4, 6]; // Gradual radii for visiblity on 20x20 grid
 
     // Badge system properties
     private badges: Phaser.GameObjects.Image[] = [];
     private badgeCount: number = 0;
-    private readonly TOTAL_BADGES: number = 6; // 5 expansion + 1 special
+    //private readonly TOTAL_BADGES: number = 6; // 5 expansion + 1 special
+    private readonly TOTAL_BADGES: number = 3; // 2 expansion + 1 special
     private readonly BADGE_SPACING: number = 34; // Spacing increased (was 28, then 22, then 24)
+    //private readonly BADGE_SPACING: number = 20; // Spacing increased (was 28, then 22, then 24)
 
     constructor() {
         super('MapScene');
@@ -56,6 +64,10 @@ export class MapScene extends Scene {
         // Load Icon Assets
         this.load.image('iconAward', iconAwardPng);
         this.load.image('iconCrown', iconCrownPng);
+
+        // Load Tilemap
+        this.load.image('city-tileset', cityTilesetPng);
+        this.load.tilemapTiledJSON('city-map', cityMapJson);
     }
 
     create() {
@@ -68,8 +80,20 @@ export class MapScene extends Scene {
         // Generate buildings in zones to guarantee progression
         this.mapGrid.generateStagedBuildings(this.buildingCount, this.TOTAL_EXPANSIONS, this.RADII);
 
-        // Create graphics object for rendering
+        // Initialize and setup Tilemap
+        const map = this.make.tilemap({ key: 'city-map' });
+        const tileset = map.addTilesetImage('city-tileset', 'city-tileset', 16, 16, 0, 1);
+        if (tileset) {
+            const groundLayer = map.createLayer('groundLayer', tileset, 0, 0);
+            if (groundLayer) {
+                groundLayer.setScale(this.tileSize / 16);
+                groundLayer.setDepth(-1); // Ensure it's behind everything
+            }
+        }
+
+        // Create graphics object for rendering (Fog and Buildings)
         this.graphics = this.add.graphics();
+        this.graphics.setDepth(0);
 
         // Create player (starting in the middle)
         const startX = Math.floor(this.gridSize / 2);
@@ -169,15 +193,12 @@ export class MapScene extends Scene {
         this.questionNumberTexts.forEach(text => text.destroy());
         this.questionNumberTexts = [];
 
-        // Draw tiles
+        // Draw tiles (FOG)
         for (let x = 0; x < this.gridSize; x++) {
             for (let y = 0; y < this.gridSize; y++) {
-                if (this.mapGrid.isTileDiscovered(x, y)) {
-                    this.graphics.lineStyle(1, 0x333333, 0.5);
-                    this.graphics.strokeRect(x * this.tileSize, y * this.tileSize, this.tileSize, this.tileSize);
-                } else {
+                if (!this.mapGrid.isTileDiscovered(x, y)) {
                     // Draw "fog" for undiscovered tiles
-                    this.graphics.fillStyle(0x111111, 0.5);
+                    this.graphics.fillStyle(0x000000, 0.8);
                     this.graphics.fillRect(x * this.tileSize, y * this.tileSize, this.tileSize, this.tileSize);
                 }
             }
@@ -295,9 +316,9 @@ export class MapScene extends Scene {
             const totalBuildings = this.mapGrid.getTotalCount();
             const conqueredCount = this.mapGrid.getConqueredCount();
 
-            // Track which expansion stage we should be at
+            // Track which expansion stage we should be at (0 to TOTAL_EXPANSIONS)
             let targetStage = this.currentExpansionStage;
-            for (let s = 1; s < this.TOTAL_EXPANSIONS; s++) {
+            for (let s = 1; s <= this.TOTAL_EXPANSIONS; s++) {
                 const threshold = Math.ceil((s * totalBuildings) / this.TOTAL_EXPANSIONS);
                 if (conqueredCount >= threshold) {
                     targetStage = s;
@@ -307,24 +328,28 @@ export class MapScene extends Scene {
             // Expand if we hit a new stage
             if (targetStage > this.currentExpansionStage) {
                 this.currentExpansionStage = targetStage;
-                this.mapGrid.discoveryRadius = this.RADII[this.currentExpansionStage];
 
-                const centerX = Math.floor(this.gridSize / 2);
-                const centerY = Math.floor(this.gridSize / 2);
-                this.mapGrid.updateDiscoveryFromCenter(centerX, centerY);
+                if (this.currentExpansionStage === this.TOTAL_EXPANSIONS) {
+                    // Final expansion: Reveal everything
+                    this.mapGrid.revealAll();
+                } else {
+                    // Regular expansion: Increase radius
+                    this.mapGrid.discoveryRadius = this.RADII[this.currentExpansionStage];
+                    const centerX = Math.floor(this.gridSize / 2);
+                    const centerY = Math.floor(this.gridSize / 2);
+                    this.mapGrid.updateDiscoveryFromCenter(centerX, centerY);
+                }
 
-                console.log(`Expansion Stage ${this.currentExpansionStage} triggered! (Threshold: ${conqueredCount}, Radius: ${this.mapGrid.discoveryRadius})`);
-
-                // Award expansion badge if new stage reached (stages 1-5)
-                if (this.currentExpansionStage >= 1 && this.currentExpansionStage <= 5) {
+                // Award expansion badge
+                if (this.currentExpansionStage >= 1 && this.currentExpansionStage <= this.TOTAL_EXPANSIONS) {
                     this.badgeCount = Math.max(this.badgeCount, this.currentExpansionStage);
                     this.drawBadges();
                 }
             }
 
             // Award special badge when all buildings conquered
-            if (conqueredCount === totalBuildings && this.badgeCount < 6) {
-                this.badgeCount = 6; // All badges earned
+            if (conqueredCount === totalBuildings && this.badgeCount < 3) {
+                this.badgeCount = 3; // All badges earned
                 this.drawBadges();
             }
 
