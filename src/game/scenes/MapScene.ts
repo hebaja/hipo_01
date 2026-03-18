@@ -422,6 +422,12 @@ export class MapScene extends Scene {
                 building: building,
                 mapScene: this
             });
+        } else if (building.challengeType === 'memoryGame') {
+            // Launch Memory Game scene
+            this.scene.launch('MemoryGameScene', {
+                building: building,
+                mapScene: this
+            });
         } else {
             // Filter questions by category
             const categoryQuestions = quizQuestions.filter(q => q.category === building.category);

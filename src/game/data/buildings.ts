@@ -9,7 +9,7 @@ export interface Building {
     questionIndex: number;
     questionNumber: number;
     wrongAttempts: number;
-    challengeType: 'quiz' | 'anagram' | 'twoTruthsOneLie' | 'wordSearch';
+    challengeType: 'quiz' | 'anagram' | 'twoTruthsOneLie' | 'wordSearch' | 'memoryGame';
 }
 
 export class MapGrid {
@@ -43,9 +43,9 @@ export class MapGrid {
             categoryQuestionCount[cat.name] = 0;
         });
 
-        // Calculate challenge type distribution (even split between 4 types)
-        const types: ('quiz' | 'anagram' | 'twoTruthsOneLie' | 'wordSearch')[] = ['quiz', 'anagram', 'twoTruthsOneLie', 'wordSearch'];
-        const challengeTypes: ('quiz' | 'anagram' | 'twoTruthsOneLie' | 'wordSearch')[] = [];
+        // Calculate challenge type distribution (even split between 5 types)
+        const types: ('quiz' | 'anagram' | 'twoTruthsOneLie' | 'wordSearch' | 'memoryGame')[] = ['quiz', 'anagram', 'twoTruthsOneLie', 'wordSearch', 'memoryGame'];
+        const challengeTypes: ('quiz' | 'anagram' | 'twoTruthsOneLie' | 'wordSearch' | 'memoryGame')[] = [];
         
         // Distribute evenly (round-robin)
         for (let i = 0; i < totalCount; i++) {
