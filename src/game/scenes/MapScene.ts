@@ -2,6 +2,19 @@ import { Scene } from 'phaser';
 import { MapGrid, Building } from '../data/buildings';
 import { Player } from '../objects/Player';
 import { quizQuestions } from '../data/questions';
+import maleAdventurerPng from '../../assets/sprites/Male adventurer/Tilesheet/character_maleAdventurer_sheet.png';
+import maleAdventurerXml from '../../assets/sprites/Male adventurer/Tilesheet/character_maleAdventurer_sheet.xml?url';
+
+// UI Assets
+import panelBrownPng from '../../assets/ui/PNG/panel_brown.png';
+import buttonLongBeigePng from '../../assets/ui/PNG/buttonLong_beige.png';
+import buttonLongBeigePressedPng from '../../assets/ui/PNG/buttonLong_beige_pressed.png';
+import iconCrossBrownPng from '../../assets/ui/PNG/iconCross_brown.png';
+import cursorGauntletPng from '../../assets/ui/PNG/cursorGauntlet_bronze.png';
+
+// Board Game Icons Assets
+import iconAwardPng from '../../assets/icons/PNG/Default (64px)/award.png';
+import iconCrownPng from '../../assets/icons/PNG/Default (64px)/crown_a.png';
 
 export class MapScene extends Scene {
     private mapGrid: MapGrid;
@@ -20,22 +33,38 @@ export class MapScene extends Scene {
 
     private TOTAL_EXPANSIONS = 6; // 6 stages: Initial + 5 expansions
     private RADII = [2, 4, 6, 8, 11, 15]; // Gradual radii for visiblity on 20x20 grid
-    
+
     // Badge system properties
-    private badges: Phaser.GameObjects.Graphics[] = [];
+    private badges: Phaser.GameObjects.Image[] = [];
     private badgeCount: number = 0;
     private readonly TOTAL_BADGES: number = 6; // 5 expansion + 1 special
-    private readonly BADGE_SIZE: number = 14; // Radius reduced (was 18)
     private readonly BADGE_SPACING: number = 34; // Spacing increased (was 28, then 22, then 24)
 
     constructor() {
         super('MapScene');
     }
 
+    preload() {
+        this.load.atlasXML('maleAdventurer', maleAdventurerPng, maleAdventurerXml);
+
+        // Load UI Panel & Buttons
+        this.load.image('panel_brown', panelBrownPng);
+        this.load.image('buttonLong_beige', buttonLongBeigePng);
+        this.load.image('buttonLong_beige_pressed', buttonLongBeigePressedPng);
+        this.load.image('iconCross_brown', iconCrossBrownPng);
+
+        // Load Icon Assets
+        this.load.image('iconAward', iconAwardPng);
+        this.load.image('iconCrown', iconCrownPng);
+    }
+
     create() {
+        // Set custom default cursor
+        this.input.setDefaultCursor(`url(${cursorGauntletPng}), default`);
+
         // Initialize map grid
         this.mapGrid = new MapGrid(this.gridSize, this.gridSize, this.tileSize);
-        
+
         // Generate buildings in zones to guarantee progression
         this.mapGrid.generateStagedBuildings(this.buildingCount, this.TOTAL_EXPANSIONS, this.RADII);
 
@@ -46,6 +75,31 @@ export class MapScene extends Scene {
         const startX = Math.floor(this.gridSize / 2);
         const startY = Math.floor(this.gridSize / 2);
         this.player = new Player(this, this.mapGrid, startX, startY);
+
+        // Register player animations
+        this.anims.create({
+            key: 'player-idle',
+            frames: [{ key: 'maleAdventurer', frame: 'idle' }],
+            frameRate: 10
+        });
+
+        this.anims.create({
+            key: 'player-walk',
+            frames: [
+                { key: 'maleAdventurer', frame: 'walk0' },
+                { key: 'maleAdventurer', frame: 'walk1' },
+                { key: 'maleAdventurer', frame: 'walk2' },
+                { key: 'maleAdventurer', frame: 'walk3' },
+                { key: 'maleAdventurer', frame: 'walk4' },
+                { key: 'maleAdventurer', frame: 'walk5' },
+                { key: 'maleAdventurer', frame: 'walk6' },
+                { key: 'maleAdventurer', frame: 'walk7' }
+            ],
+            frameRate: 10,
+            repeat: -1
+        });
+
+        this.player.sprite.play('player-idle');
 
         // Initial map reveal
         this.mapGrid.discoveryRadius = this.RADII[0];
@@ -96,7 +150,7 @@ export class MapScene extends Scene {
 
         if (nearbyBuilding) {
             this.interactionText.setText(`Pressione ESPAÇO para conquistar: ${nearbyBuilding.category}`);
-            
+
             if (this.player.isInteracting() && !nearbyBuilding.conquered) {
                 this.startQuiz(nearbyBuilding);
             }
@@ -172,8 +226,8 @@ export class MapScene extends Scene {
     }
 
     private drawBadges(): void {
-        // Clear existing badge graphics
-        this.badges.forEach((badge: Phaser.GameObjects.Graphics) => badge.destroy());
+        // Clear existing badge images
+        this.badges.forEach((badge: Phaser.GameObjects.Image) => badge.destroy());
         this.badges = [];
 
         // Calculate positioning at bottom of HUD (left-aligned)
@@ -182,22 +236,26 @@ export class MapScene extends Scene {
 
         // Draw each badge
         for (let i = 0; i < this.TOTAL_BADGES; i++) {
-            const badge = this.add.graphics();
             const x = startX + i * this.BADGE_SPACING;
             const y = hudBottomY;
 
+            // Determine if it's the 6th badge (index 5)
+            const isFinalBadge = (i === this.TOTAL_BADGES - 1);
+            const texture = isFinalBadge ? 'iconCrown' : 'iconAward';
+
+            const badge = this.add.image(x, y, texture);
+
+            // The icons are 64x64. Scale to 32x32 to fit the HUD nicely.
+            badge.setScale(0.5);
+
             if (i < this.badgeCount) {
-                // Earned badge: golden circle with orange border
-                badge.fillStyle(0xFFD700, 1); // Gold
-                badge.fillCircle(x, y, this.BADGE_SIZE);
-                badge.lineStyle(2, 0xFFA500, 1); // Orange border
-                badge.strokeCircle(x, y, this.BADGE_SIZE);
+                // Earned badge: Normal color, fully opaque
+                badge.clearTint();
+                badge.setAlpha(1);
             } else {
                 // Locked badge: dark gray with transparency
-                badge.fillStyle(0x333333, 0.4);
-                badge.fillCircle(x, y, this.BADGE_SIZE);
-                badge.lineStyle(1, 0x555555, 0.4);
-                badge.strokeCircle(x, y, this.BADGE_SIZE);
+                badge.setTint(0x333333);
+                badge.setAlpha(0.4);
             }
 
             badge.setScrollFactor(0);
@@ -209,7 +267,7 @@ export class MapScene extends Scene {
     private startQuiz(building: Building) {
         // Filter questions by category
         const categoryQuestions = quizQuestions.filter(q => q.category === building.category);
-        
+
         if (categoryQuestions.length === 0) {
             console.error(`Nenhuma questão encontrada para a categoria: ${building.category}`);
             return;
@@ -224,7 +282,7 @@ export class MapScene extends Scene {
             building: building,
             mapScene: this
         });
-        
+
         // Pause this scene
         this.scene.pause();
     }
@@ -232,11 +290,11 @@ export class MapScene extends Scene {
     public onQuizComplete(success: boolean | null, building: Building) {
         if (success === true) {
             this.mapGrid.conquerBuilding(building);
-            
+
             // Synchronized Expansion logic: 5 discrete expansions
             const totalBuildings = this.mapGrid.getTotalCount();
             const conqueredCount = this.mapGrid.getConqueredCount();
-            
+
             // Track which expansion stage we should be at
             let targetStage = this.currentExpansionStage;
             for (let s = 1; s < this.TOTAL_EXPANSIONS; s++) {
@@ -250,34 +308,34 @@ export class MapScene extends Scene {
             if (targetStage > this.currentExpansionStage) {
                 this.currentExpansionStage = targetStage;
                 this.mapGrid.discoveryRadius = this.RADII[this.currentExpansionStage];
-                
+
                 const centerX = Math.floor(this.gridSize / 2);
                 const centerY = Math.floor(this.gridSize / 2);
                 this.mapGrid.updateDiscoveryFromCenter(centerX, centerY);
-                
+
                 console.log(`Expansion Stage ${this.currentExpansionStage} triggered! (Threshold: ${conqueredCount}, Radius: ${this.mapGrid.discoveryRadius})`);
-                
+
                 // Award expansion badge if new stage reached (stages 1-5)
                 if (this.currentExpansionStage >= 1 && this.currentExpansionStage <= 5) {
                     this.badgeCount = Math.max(this.badgeCount, this.currentExpansionStage);
                     this.drawBadges();
                 }
             }
-            
+
             // Award special badge when all buildings conquered
             if (conqueredCount === totalBuildings && this.badgeCount < 6) {
                 this.badgeCount = 6; // All badges earned
                 this.drawBadges();
             }
-            
+
             this.score += 100;
-            
+
             // Redraw map to show conquered building and new area
             this.drawMap();
-            
+
             // Redraw badges to ensure they're on top
             this.drawBadges();
-            
+
             // Show success message
             const msg = this.add.text(
                 this.cameras.main.midPoint.x,
@@ -291,7 +349,7 @@ export class MapScene extends Scene {
             );
             msg.setOrigin(0.5);
             msg.setScrollFactor(0);
-            
+
             this.time.delayedCall(1500, () => msg.destroy());
         } else if (success === false) {
             // Show failure message
@@ -307,7 +365,7 @@ export class MapScene extends Scene {
             );
             msg.setOrigin(0.5);
             msg.setScrollFactor(0);
-            
+
             this.time.delayedCall(1500, () => msg.destroy());
         }
         // If success is null, do nothing just resume
@@ -330,14 +388,20 @@ export class MapScene extends Scene {
         bg.fillRect(0, 0, width, height);
         this.tutorialContainer.add(bg);
 
-        // Tutorial Box
+        // Tutorial Box using NineSlice
         const boxWidth = 500;
         const boxHeight = 400;
-        const box = this.add.graphics();
-        box.fillStyle(0x222222, 1);
-        box.lineStyle(4, 0xffffff, 1);
-        box.fillRoundedRect((width - boxWidth) / 2, (height - boxHeight) / 2, boxWidth, boxHeight, 20);
-        box.strokeRoundedRect((width - boxWidth) / 2, (height - boxHeight) / 2, boxWidth, boxHeight, 20);
+
+        // panel_brown.png is typically 100x100 with corners taking roughly 30px
+        const box = this.add.nineslice(
+            width / 2,
+            height / 2,
+            'panel_brown',
+            0, // frame
+            boxWidth,
+            boxHeight,
+            32, 32, 32, 32 // Left, Right, Top, Bottom margins
+        );
         this.tutorialContainer.add(box);
 
         // Title
