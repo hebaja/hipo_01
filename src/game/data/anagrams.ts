@@ -20,7 +20,7 @@ export const anagramData: { [category: string]: Anagram } = {
     },
     'Fotografia': {
         name: 'DAGUERRE',
-        scrambled: 'GERUDEA',
+        scrambled: 'GERUDEAR',
         genericHint: 'Pense no inventor da fotografia',
         specificHint: 'Inventor do daguerreótipo'
     },
