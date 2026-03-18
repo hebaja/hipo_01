@@ -19,7 +19,7 @@ export interface NPC {
     stage: number;
     name: string;
     type: string;
-    challengeType: 'quiz' | 'anagram';
+    challengeType: 'quiz' | 'anagram' | 'twoTruthsOneLie';
 }
 
 export class MapGrid {
@@ -53,16 +53,16 @@ export class MapGrid {
             categoryQuestionCount[cat.name] = 0;
         });
 
-        // Calculate challenge type distribution (even split)
-        const anagramCount = Math.floor(totalCount / 2);
-        const quizCount = totalCount - anagramCount;
+        // Calculate challenge type distribution (even split between 3 types)
+        const types: ('quiz' | 'anagram' | 'twoTruthsOneLie')[] = ['quiz', 'anagram', 'twoTruthsOneLie'];
+        const challengeTypes: ('quiz' | 'anagram' | 'twoTruthsOneLie')[] = [];
         
-        // Create an array of challenge types and shuffle it for random distribution
-        const challengeTypes: ('quiz' | 'anagram')[] = [];
-        for (let i = 0; i < anagramCount; i++) challengeTypes.push('anagram');
-        for (let i = 0; i < quizCount; i++) challengeTypes.push('quiz');
+        // Distribute evenly (round-robin)
+        for (let i = 0; i < totalCount; i++) {
+            challengeTypes.push(types[i % types.length]);
+        }
         
-        // Fisher-Yates shuffle
+        // Fisher-Yates shuffle to randomize the order of the evenly distributed types
         for (let i = challengeTypes.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [challengeTypes[i], challengeTypes[j]] = [challengeTypes[j], challengeTypes[i]];
