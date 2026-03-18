@@ -23,7 +23,7 @@ export class MapGrid {
         this.width = width;
         this.height = height;
         this.tileSize = tileSize;
-        
+
         // Initialize discovery grid
         this.discovered = Array(width).fill(null).map(() => Array(height).fill(false));
     }
@@ -42,7 +42,7 @@ export class MapGrid {
         for (let s = 0; s < stages; s++) {
             const innerRadius = s === 0 ? 0 : radii[s - 1];
             const outerRadius = radii[s];
-            
+
             const thresholdCurrent = Math.ceil((s + 1) * totalCount / stages);
             const thresholdPrev = s === 0 ? 0 : Math.ceil(s * totalCount / stages);
             const countForStage = thresholdCurrent - thresholdPrev;
@@ -60,18 +60,18 @@ export class MapGrid {
                 if (positions.has(posKey)) continue;
 
                 const distance = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
-                
+
                 // Fallback: If we've tried too many times for this specific ring,
                 // accept ANY position within the outer radius (including inner areas)
                 // This ensures we always place the required number of buildings.
-                const isWithinZone = attempts < maxAttempts 
+                const isWithinZone = attempts < maxAttempts
                     ? (distance <= outerRadius && distance >= innerRadius)
                     : (distance <= outerRadius);
 
                 if (isWithinZone) {
                     positions.add(posKey);
                     const categoryData = categories[Math.floor(Math.random() * categories.length)];
-                    
+
                     const questionIndex = categoryQuestionCount[categoryData.name] % 2;
                     const questionNumber = Object.values(categoryQuestionCount).reduce((a, b) => a + b, 0) + 1;
                     categoryQuestionCount[categoryData.name]++;
