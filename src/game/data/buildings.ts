@@ -19,6 +19,7 @@ export interface NPC {
     stage: number;
     name: string;
     type: string;
+    challengeType: 'quiz' | 'anagram';
 }
 
 export class MapGrid {
@@ -51,6 +52,21 @@ export class MapGrid {
         categories.forEach(cat => {
             categoryQuestionCount[cat.name] = 0;
         });
+
+        // Calculate challenge type distribution (even split)
+        const anagramCount = Math.floor(totalCount / 2);
+        const quizCount = totalCount - anagramCount;
+        
+        // Create an array of challenge types and shuffle it for random distribution
+        const challengeTypes: ('quiz' | 'anagram')[] = [];
+        for (let i = 0; i < anagramCount; i++) challengeTypes.push('anagram');
+        for (let i = 0; i < quizCount; i++) challengeTypes.push('quiz');
+        
+        // Fisher-Yates shuffle
+        for (let i = challengeTypes.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [challengeTypes[i], challengeTypes[j]] = [challengeTypes[j], challengeTypes[i]];
+        }
 
         for (let s = 0; s < stages; s++) {
             const innerRadius = s === 0 ? 0 : radii[s - 1];
@@ -89,6 +105,9 @@ export class MapGrid {
                     const questionNumber = Object.values(categoryQuestionCount).reduce((a, b) => a + b, 0) + 1;
                     categoryQuestionCount[categoryData.name]++;
 
+                    // Get challenge type from shuffled array
+                    const challengeType = challengeTypes[this.grid.length];
+
                     this.grid.push({
                         x,
                         y,
@@ -100,6 +119,7 @@ export class MapGrid {
                         wrongAttempts: 0,
                         stage: s,
                         lastHintIndex: 0
+                        challengeType: challengeType
                     });
                     placedInStage++;
                 }

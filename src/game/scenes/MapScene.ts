@@ -403,28 +403,8 @@ export class MapScene extends Scene {
     }
 
     private startQuiz(building: Building) {
-        // Filter questions by category
-        const categoryQuestions = quizQuestions.filter(q => q.category === building.category);
-
-        if (categoryQuestions.length === 0) {
-            console.error(`Nenhuma questão encontrada para a categoria: ${building.category}`);
-            return;
-        }
-
-        // Use stored question index (assigned during generation)
-        const question = categoryQuestions[building.questionIndex];
-
-        // Launch quiz scene with persistent question
-        this.scene.launch('QuizScene', {
-            question: question,
-            building: building,
-            mapScene: this
-        });
-
-        // Randomly select between Quiz and Anagram (50/50 chance)
-        const isAnagram = Math.random() < 0.5;
-
-        if (isAnagram) {
+        // Use the building's persistent challenge type
+        if (building.challengeType === 'anagram') {
             // Launch anagram scene
             this.scene.launch('AnagramScene', {
                 building: building,
