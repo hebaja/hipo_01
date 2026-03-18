@@ -132,4 +132,12 @@ export class MapGrid {
         // For the requested "radius based access", we keep it simple:
         this.revealArea(centerX, centerY, this.discoveryRadius);
     }
+
+    public revealAll() {
+        for (let x = 0; x < this.width; x++) {
+            for (let y = 0; y < this.height; y++) {
+                this.discovered[x][y] = true;
+            }
+        }
+    }
 }
