@@ -109,8 +109,14 @@ export class TwoTruthsOneLieScene extends Scene {
     }
 
     private startGame(panelX: number, panelY: number, panelWidth: number) {
-        // Select random painter
-        const painterIndex = Math.floor(Math.random() * PAINTER_FACTS.length);
+        // Select painter: reuse stored index if already assigned, otherwise pick random
+        let painterIndex: number;
+        if (this.building.painterIndex >= 0) {
+            painterIndex = this.building.painterIndex;
+        } else {
+            painterIndex = Math.floor(Math.random() * PAINTER_FACTS.length);
+            this.building.painterIndex = painterIndex;
+        }
         this.currentPainter = PAINTER_FACTS[painterIndex];
 
         // Shuffle facts

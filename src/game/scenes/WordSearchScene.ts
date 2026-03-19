@@ -56,6 +56,8 @@ export class WordSearchScene extends Scene {
         this.foundWords = [];
         this.wordListText = [];
 
+        const isFirstVisit = this.building.wordPositions.length === 0;
+
         // Dark overlay
         const overlay = this.add.rectangle(
             this.cameras.main.width / 2,
@@ -143,6 +145,13 @@ export class WordSearchScene extends Scene {
         // Display word list (to the right of the grid)
         this.displayWordList(panelX, panelWidth);
 
+        // Persist grid on first visit, restore found words on return
+        if (isFirstVisit) {
+            this.persistGrid();
+        } else {
+            this.restoreFoundWords();
+        }
+
         // Close button (Icon image instead of text)
         this.closeButton = this.add.image(panelX + panelWidth / 2 - 24, panelY - panelHeight / 2 + 24, 'iconCross_brown')
             .setInteractive({ cursor: `url(${cursorHandPng}), pointer` })
@@ -151,7 +160,13 @@ export class WordSearchScene extends Scene {
 
         this.closeButton.on('pointerdown', () => {
             this.scene.stop();
-            this.mapScene.onQuizComplete(null, this.building);
+            const unfoundCount = this.words.length - this.building.foundWords.length;
+            if (unfoundCount > 0) {
+                this.building.wrongAttempts++;
+                this.mapScene.onQuizComplete(false, this.building);
+            } else {
+                this.mapScene.onQuizComplete(null, this.building);
+            }
         });
 
         this.closeButton.on('pointerover', () => {
@@ -169,7 +184,7 @@ export class WordSearchScene extends Scene {
         this.input.on('pointerupoutside', this.onPointerUp, this);
     }
 
-    private generateGrid() {
+    private generateGrid(): void {
         // Create empty grid
         this.grid = [];
         for (let y = 0; y < this.gridSize; y++) {
@@ -186,23 +201,43 @@ export class WordSearchScene extends Scene {
             }
         }
 
-        // Place words
-        for (const word of this.words) {
-            this.placeWord(word);
-        }
+        if (this.building.gridLetters.length > 0) {
+            // Restore from stored data
+            this.building.wordPositions.forEach(wp => {
+                for (let i = 0; i < wp.word.length; i++) {
+                    const x = wp.startX + i * wp.dx;
+                    const y = wp.startY + i * wp.dy;
+                    this.grid[y][x].letter = wp.word[i];
+                }
+            });
+            for (let y = 0; y < this.gridSize; y++) {
+                for (let x = 0; x < this.gridSize; x++) {
+                    if (this.grid[y][x].letter === '') {
+                        this.grid[y][x].letter = this.building.gridLetters[y][x];
+                    }
+                }
+            }
+        } else {
+            // Generate new grid
+            for (const word of this.words) {
+                const pos = this.placeWord(word);
+                if (pos) {
+                    this.building.wordPositions.push({ word, ...pos });
+                }
+            }
 
-        // Fill remaining cells with random letters
-        const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        for (let y = 0; y < this.gridSize; y++) {
-            for (let x = 0; x < this.gridSize; x++) {
-                if (this.grid[y][x].letter === '') {
-                    this.grid[y][x].letter = alphabet[Math.floor(Math.random() * alphabet.length)];
+            const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            for (let y = 0; y < this.gridSize; y++) {
+                for (let x = 0; x < this.gridSize; x++) {
+                    if (this.grid[y][x].letter === '') {
+                        this.grid[y][x].letter = alphabet[Math.floor(Math.random() * alphabet.length)];
+                    }
                 }
             }
         }
     }
 
-    private placeWord(word: string): boolean {
+    private placeWord(word: string): { startX: number, startY: number, dx: number, dy: number } | null {
         const directions = [
             { dx: 1, dy: 0 },   // right
             { dx: 0, dy: 1 },   // down
@@ -221,12 +256,12 @@ export class WordSearchScene extends Scene {
 
                 if (this.canPlaceWord(word, startX, startY, dir)) {
                     this.placeWordAt(word, startX, startY, dir);
-                    return true;
+                    return { startX, startY, dx: dir.dx, dy: dir.dy };
                 }
             }
         }
 
-        return false;
+        return null;
     }
 
     private canPlaceWord(word: string, startX: number, startY: number, dir: { dx: number; dy: number }): boolean {
@@ -439,6 +474,7 @@ export class WordSearchScene extends Scene {
         }
 
         this.foundWords.push(word);
+        this.building.foundWords.push(word);
         this.highlightSelectedCells();
 
         // Check win condition
@@ -508,5 +544,43 @@ export class WordSearchScene extends Scene {
             this.scene.stop();
             this.mapScene.onQuizComplete(true, this.building);
         });
+    }
+
+    private persistGrid(): void {
+        // Store full grid letters (including filler) for restoration
+        this.building.gridLetters = [];
+        for (let y = 0; y < this.gridSize; y++) {
+            this.building.gridLetters[y] = [];
+            for (let x = 0; x < this.gridSize; x++) {
+                this.building.gridLetters[y][x] = this.grid[y][x].letter;
+            }
+        }
+    }
+
+    private restoreFoundWords(): void {
+        for (const word of this.building.foundWords) {
+            if (this.foundWords.includes(word)) continue;
+
+            // Mark grid cells as found
+            for (let y = 0; y < this.gridSize; y++) {
+                for (let x = 0; x < this.gridSize; x++) {
+                    if (this.grid[y][x].letter === word[0]) {
+                        this.tryMarkWord(word, x, y);
+                    }
+                }
+            }
+
+            // Update word list UI
+            const wordIndex = this.words.indexOf(word);
+            if (wordIndex !== -1 && this.wordListText[wordIndex + 1]) {
+                this.wordListText[wordIndex + 1].setColor('#00ff00');
+                this.wordListText[wordIndex + 1].setStyle({ fontStyle: 'italic' });
+            }
+
+            this.foundWords.push(word);
+        }
+
+        // Redraw found cell highlights
+        this.highlightSelectedCells();
     }
 }

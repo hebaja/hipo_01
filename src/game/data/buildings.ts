@@ -11,6 +11,10 @@ export interface Building {
     stage: number;
     lastHintIndex: number;
     wrongAttempts: number;
+    painterIndex: number;
+    wordPositions: { word: string, startX: number, startY: number, dx: number, dy: number }[];
+    gridLetters: string[][];
+    foundWords: string[];
     challengeType: 'quiz' | 'anagram' | 'twoTruthsOneLie' | 'wordSearch' | 'memoryGame';
 }
 
@@ -119,6 +123,10 @@ export class MapGrid {
                         wrongAttempts: 0,
                         stage: s,
                         lastHintIndex: 0,
+                        painterIndex: -1,
+                        wordPositions: [],
+                        gridLetters: [],
+                        foundWords: [],
                         challengeType: challengeType
                     });
                     placedInStage++;

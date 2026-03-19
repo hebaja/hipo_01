@@ -3,6 +3,7 @@ import { MapGrid, Building, NPC } from '../data/buildings';
 import { Player } from '../objects/Player';
 import { quizQuestions } from '../data/questions';
 import { getAnagramForCategory } from '../data/anagrams';
+import { PAINTER_FACTS } from '../data/twoTruthsOneLie';
 import maleAdventurerPng from '../../assets/sprites/Male adventurer/Tilesheet/character_maleAdventurer_sheet.png';
 import maleAdventurerXml from '../../assets/sprites/Male adventurer/Tilesheet/character_maleAdventurer_sheet.xml?url';
 
@@ -583,6 +584,23 @@ export class MapScene extends Scene {
                 const hint = anagram.hints[buildingWithError.lastHintIndex % anagram.hints.length];
                 buildingWithError.lastHintIndex++;
                 message = `${npc.name}: Percebi que você teve dificuldade em ${buildingWithError.category}.\n\nDica: ${hint}`;
+            } else if (buildingWithError.challengeType === 'twoTruthsOneLie') {
+                const painter = PAINTER_FACTS[buildingWithError.painterIndex];
+                const hint = painter.hints[buildingWithError.lastHintIndex % painter.hints.length];
+                buildingWithError.lastHintIndex++;
+                message = `${npc.name}: Percebi que você teve dificuldade em ${buildingWithError.category}.\n\nDica: ${hint}`;
+            } else if (buildingWithError.challengeType === 'wordSearch') {
+                const unfoundWords = buildingWithError.wordPositions.filter(
+                    wp => !buildingWithError.foundWords.includes(wp.word)
+                );
+                if (unfoundWords.length > 0) {
+                    const wp = unfoundWords[buildingWithError.lastHintIndex % unfoundWords.length];
+                    buildingWithError.lastHintIndex++;
+                    const direction = (wp.dx !== 0) ? 'horizontal' : 'vertical';
+                    message = `${npc.name}: Percebi que você teve dificuldade em ${buildingWithError.category}.\n\nDica: A palavra ${wp.word} está na ${direction}.`;
+                } else {
+                    message = `${npc.name}: Você está indo muito bem nesta área!\nContinue explorando as redondezas.`;
+                }
             } else {
                 const categoryQuestions = quizQuestions.filter(q => q.category === buildingWithError.category);
                 const question = categoryQuestions[buildingWithError.questionIndex];
