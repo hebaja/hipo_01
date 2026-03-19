@@ -28,15 +28,14 @@ import iconAwardPng from '../../assets/icons/PNG/Default (64px)/award.png';
 import iconCrownPng from '../../assets/icons/PNG/Default (64px)/crown_a.png';
 
 // Tilemap Assets
-import cityTilesetPng from '../../assets/tilesets/Tilemap/tilemap_packed.png';
-import cityMapJson from '../../assets/tilemap/city_map.json?url';
+import cityTilesetPng from '../../assets/map/spritesheet.png';
+import cityMapJson from '../../assets/map/map.json?url';
 
 export class MapScene extends Scene {
     private mapGrid: MapGrid;
     private player: Player;
     private gridSize: number = 20;
     private tileSize: number = 64;
-    private buildingCount: number = 6;
     private graphics: any;
     private interactionText: any;
     private scoreText: any;
@@ -45,7 +44,7 @@ export class MapScene extends Scene {
     private tutorialContainer: Phaser.GameObjects.Container | null = null;
     private questionNumberTexts: Phaser.GameObjects.Text[] = [];
     private currentExpansionStage: number = 0;
-
+    private buildingsLayer: Phaser.Tilemaps.TilemapLayer | null = null;
     private npcSprites: Map<string, Phaser.GameObjects.Sprite> = new Map();
     private npcBalloons: Map<string, Phaser.GameObjects.Container> = new Map();
 
@@ -96,23 +95,42 @@ export class MapScene extends Scene {
         this.mapGrid = new MapGrid(this.gridSize, this.gridSize, this.tileSize);
 
         // Generate buildings and NPCs in zones to guarantee progression
-        this.mapGrid.generateStagedBuildings(this.buildingCount, this.TOTAL_EXPANSIONS, this.RADII);
-        this.mapGrid.generateNPCs(this.TOTAL_EXPANSIONS, this.RADII);
+        // this.mapGrid.generateStagedBuildings(this.buildingCount, this.TOTAL_EXPANSIONS, this.RADII);
+        // this.mapGrid.generateNPCs(this.TOTAL_EXPANSIONS, this.RADII);
 
         // Initialize and setup Tilemap
         const map = this.make.tilemap({ key: 'city-map' });
-        const tileset = map.addTilesetImage('city-tileset', 'city-tileset', 16, 16, 0, 1);
+        // The name 'spritefusion' matches the tileset name in map.json
+        const tileset = map.addTilesetImage('spritefusion', 'city-tileset', 16, 16, 0, 0);
+        
         if (tileset) {
-            const groundLayer = map.createLayer('groundLayer', tileset, 0, 0);
-            if (groundLayer) {
-                groundLayer.setScale(this.tileSize / 16);
-                groundLayer.setDepth(-1); // Ensure it's behind everything
-            }
+            // Create all layers in correct order
+            const layers = ['grass', 'surrounding walls', 'woods', 'objects', 'buildings', 'roof'];
+            layers.forEach((layerName, index) => {
+                const layer = map.createLayer(layerName, tileset, 0, 0);
+                if (layer) {
+                    layer.setScale(this.tileSize / 16);
+                    // Depth: grass at bottom (-10), others up to (-5)
+                    layer.setDepth(-10 + index);
+                    
+                    // Store reference to buildings layer for tinting
+                    if (layerName === 'buildings') {
+                        this.buildingsLayer = layer;
+                    }
+                }
+            });
         }
+
+        // Initialize map grid with tilemap data
+        const mapData = this.cache.tilemap.get('city-map').data;
+        this.mapGrid.loadFromTilemap(mapData);
+        
+        // Generate NPCs in valid open spots
+        this.mapGrid.generateNPCs(this.TOTAL_EXPANSIONS, this.RADII);
 
         // Create graphics object for rendering (Fog and Buildings)
         this.graphics = this.add.graphics();
-        this.graphics.setDepth(0);
+        this.graphics.setDepth(0); // Fog covers all map layers (-10 to -5) but is below Player (100)
 
         // Create player (starting in the middle)
         const startX = Math.floor(this.gridSize / 2);
@@ -144,7 +162,7 @@ export class MapScene extends Scene {
 
         this.player.sprite.play('player-idle');
 
-        // Initial map reveal
+        // Initial map reveal (starting at 10, 10 for the 20x20 map)
         this.mapGrid.discoveryRadius = this.RADII[0];
         this.mapGrid.updateDiscoveryFromCenter(startX, startY);
 
@@ -281,28 +299,29 @@ export class MapScene extends Scene {
             }
         }
 
-        // Draw buildings
+        // Update building tints
         this.mapGrid.grid.forEach(building => {
             if (!this.mapGrid.isTileDiscovered(building.x, building.y)) return;
 
-            const alpha = building.conquered ? 1 : 0.6;
-            this.graphics.fillStyle(building.color, alpha);
-            this.graphics.fillRect(
-                building.x * this.tileSize + 4,
-                building.y * this.tileSize + 4,
-                this.tileSize - 8,
-                this.tileSize - 8
-            );
-
-            // Add border for conquered buildings
-            if (building.conquered) {
-                this.graphics.lineStyle(3, 0xffffff, 1);
-                this.graphics.strokeRect(
-                    building.x * this.tileSize + 4,
-                    building.y * this.tileSize + 4,
-                    this.tileSize - 8,
-                    this.tileSize - 8
-                );
+            // Apply tint to building tile instead of drawing a rectangle
+            if (this.buildingsLayer) {
+                const tile = this.buildingsLayer.getTileAt(building.x, building.y);
+                if (tile) {
+                    if (building.conquered) {
+                        tile.tint = 0x888888; // Gray out conquered buildings
+                        
+                        // Add a white outline for conquered buildings
+                        this.graphics.lineStyle(2, 0xffffff, 1);
+                        this.graphics.strokeRect(
+                            building.x * this.tileSize + 2,
+                            building.y * this.tileSize + 2,
+                            this.tileSize - 4,
+                            this.tileSize - 4
+                        );
+                    } else {
+                        tile.tint = 0xffffff; // Normal color for active buildings
+                    }
+                }
             }
 
             // Add question number indicator

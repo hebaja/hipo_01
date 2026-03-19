@@ -62,7 +62,7 @@ export class Player {
 
         // Bounds checking and discovery checking
         if (newX >= 0 && newX < mapGrid.width && newY >= 0 && newY < mapGrid.height) {
-            if (moved && mapGrid.isTileDiscovered(newX, newY)) {
+            if (moved && mapGrid.isTileDiscovered(newX, newY) && mapGrid.isWalkable(newX, newY)) {
                 this.gridX = newX;
                 this.gridY = newY;
                 this.updatePosition();
