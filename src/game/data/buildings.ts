@@ -37,6 +37,7 @@ export class MapGrid {
     public height: number;
     public tileSize: number;
     public discovered: boolean[][];
+    public collisionGrid: boolean[][];
     public discoveryRadius: number = 0;
 
     constructor(width: number, height: number, tileSize: number) {
@@ -44,99 +45,117 @@ export class MapGrid {
         this.height = height;
         this.tileSize = tileSize;
 
-        // Initialize discovery grid
+        // Initialize discovery and collision grids
         this.discovered = Array(width).fill(null).map(() => Array(height).fill(false));
+        this.collisionGrid = Array(width).fill(null).map(() => Array(height).fill(false));
     }
 
-    public generateStagedBuildings(totalCount: number, stages: number, radii: number[]) {
-        const positions = new Set<string>();
+    public isWalkable(x: number, y: number): boolean {
+        if (x < 0 || x >= this.width || y < 0 || y >= this.height) return false;
+        return !this.collisionGrid[x][y];
+    }
+
+    public loadFromTilemap(data: any, radii: number[]) {
+        if (!data || !data.layers) return;
+        this.grid = [];
+        const buildingsLayer = data.layers.find((l: any) => l.name === 'buildings');
+        if (!buildingsLayer) return;
+
+        if (data.width !== this.width || data.height !== this.height) {
+            console.error(`MapGrid size mismatch! Grid: ${this.width}x${this.height}, Tilemap: ${data.width}x${data.height}`);
+        }
+
+        // Find all layers with collider: true (case-insensitive check)
+        const colliderLayers = data.layers.filter((l: any) => 
+            l.properties?.find((p: any) => p.name.toLowerCase() === 'collider' && p.value === true)
+        );
+
+        // Reset collision grid
+        this.collisionGrid = Array(this.width).fill(null).map(() => Array(this.height).fill(false));
+
+        // Populate collision grid
+        colliderLayers.forEach((layer: any) => {
+            for (let i = 0; i < layer.data.length; i++) {
+                if (layer.data[i] !== 0) {
+                    const x = i % this.width;
+                    const y = Math.floor(i / this.width);
+                    this.collisionGrid[x][y] = true;
+                }
+            }
+        });
+
+        // Extract buildings
+        const buildingPositions: {x: number, y: number, gid: number}[] = [];
+        for (let i = 0; i < buildingsLayer.data.length; i++) {
+            const gid = buildingsLayer.data[i];
+            if (gid !== 0) {
+                buildingPositions.push({
+                    x: i % this.width,
+                    y: Math.floor(i / this.width),
+                    gid: gid
+                });
+            }
+        }
+
+        // Shuffle building positions to randomize challenge distribution
+        const shuffledBuildings = [...buildingPositions].sort(() => Math.random() - 0.5);
+        
+        // Distribute challenge types
+        const types: ('quiz' | 'anagram' | 'twoTruthsOneLie' | 'wordSearch' | 'memoryGame')[] = 
+            ['quiz', 'anagram', 'twoTruthsOneLie', 'wordSearch', 'memoryGame'];
+        
+        const categoryQuestionCount: { [category: string]: number } = {};
+        categories.forEach(cat => categoryQuestionCount[cat.name] = 0);
+
         const centerX = Math.floor(this.width / 2);
         const centerY = Math.floor(this.height / 2);
 
-        // Track question distribution per category
-        const categoryQuestionCount: { [category: string]: number } = {};
-        categories.forEach(cat => {
-            categoryQuestionCount[cat.name] = 0;
-        });
+        shuffledBuildings.forEach((pos, index) => {
+            // Map GID to category (1-5 -> Escultura, Pintura, Fotografia, Música, Dança)
+            const catIndex = (pos.gid - 1) % categories.length;
+            const categoryData = categories[catIndex];
+            
+            const challengeType = types[index % types.length];
+            const questionIndex = categoryQuestionCount[categoryData.name] % 2;
+            const questionNumber = index + 1;
+            categoryQuestionCount[categoryData.name]++;
 
-        // Calculate challenge type distribution (even split between 5 types)
-        const types: ('quiz' | 'anagram' | 'twoTruthsOneLie' | 'wordSearch' | 'memoryGame')[] = ['quiz', 'anagram', 'twoTruthsOneLie', 'wordSearch', 'memoryGame'];
-        const challengeTypes: ('quiz' | 'anagram' | 'twoTruthsOneLie' | 'wordSearch' | 'memoryGame')[] = [];
-        
-        // Distribute evenly (round-robin)
-        for (let i = 0; i < totalCount; i++) {
-            challengeTypes.push(types[i % types.length]);
-        }
-        
-        // Fisher-Yates shuffle to randomize the order of the evenly distributed types
-        for (let i = challengeTypes.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [challengeTypes[i], challengeTypes[j]] = [challengeTypes[j], challengeTypes[i]];
-        }
-
-        for (let s = 0; s < stages; s++) {
-            const innerRadius = s === 0 ? 0 : radii[s - 1];
-            const outerRadius = radii[s];
-
-            const thresholdCurrent = Math.ceil((s + 1) * totalCount / stages);
-            const thresholdPrev = s === 0 ? 0 : Math.ceil(s * totalCount / stages);
-            const countForStage = thresholdCurrent - thresholdPrev;
-
-            let placedInStage = 0;
-            let attempts = 0;
-            const maxAttempts = 500;
-
-            while (placedInStage < countForStage && attempts < maxAttempts * 2) {
-                attempts++;
-                const x = Math.floor(Math.random() * this.width);
-                const y = Math.floor(Math.random() * this.height);
-                const posKey = `${x},${y}`;
-
-                if (positions.has(posKey)) continue;
-
-                const distance = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
-
-                // Fallback: If we've tried too many times for this specific ring,
-                // accept ANY position within the outer radius (including inner areas)
-                // This ensures we always place the required number of buildings.
-                const isWithinZone = attempts < maxAttempts
-                    ? (distance <= outerRadius && distance >= innerRadius)
-                    : (distance <= outerRadius);
-
-                if (isWithinZone) {
-                    positions.add(posKey);
-                    const categoryData = categories[Math.floor(Math.random() * categories.length)];
-
-                    const questionIndex = categoryQuestionCount[categoryData.name] % 2;
-                    const questionNumber = Object.values(categoryQuestionCount).reduce((a, b) => a + b, 0) + 1;
-                    categoryQuestionCount[categoryData.name]++;
-
-                    // Get challenge type from shuffled array
-                    const challengeType = challengeTypes[this.grid.length];
-
-                    this.grid.push({
-                        x,
-                        y,
-                        category: categoryData.name,
-                        color: categoryData.color,
-                        conquered: false,
-                        questionIndex: questionIndex,
-                        questionNumber: questionNumber,
-                        wrongAttempts: 0,
-                        stage: s,
-                        lastHintIndex: 0,
-                        painterIndex: -1,
-                        wordPositions: [],
-                        gridLetters: [],
-                        foundWords: [],
-                        matchedPairIds: [],
-                        lockedPositions: [],
-                        challengeType: challengeType
-                    });
-                    placedInStage++;
+            // Calculate stage based on distance from center
+            const distance = Math.sqrt(Math.pow(pos.x - centerX, 2) + Math.pow(pos.y - centerY, 2));
+            let stage = 0;
+            for (let s = 0; s < radii.length; s++) {
+                const innerRadius = s === 0 ? 0 : radii[s - 1];
+                const outerRadius = radii[s];
+                if (distance >= innerRadius && distance < outerRadius) {
+                    stage = s;
+                    break;
+                }
+                // If distance is beyond the last radius, assign to the last stage
+                if (s === radii.length - 1 && distance >= outerRadius) {
+                    stage = s;
                 }
             }
-        }
+
+            this.grid.push({
+                x: pos.x,
+                y: pos.y,
+                category: categoryData.name,
+                color: categoryData.color,
+                conquered: false,
+                questionIndex: questionIndex,
+                questionNumber: questionNumber,
+                wrongAttempts: 0,
+                stage: stage,
+                lastHintIndex: 0,
+                painterIndex: -1,
+                wordPositions: [],
+                gridLetters: [],
+                foundWords: [],
+                matchedPairIds: [],
+                lockedPositions: [],
+                challengeType: challengeType
+            });
+        });
     }
 
     public getBuildingAt(x: number, y: number): Building | null {
@@ -210,6 +229,7 @@ export class MapGrid {
                 const posKey = `${x},${y}`;
 
                 if (positions.has(posKey)) continue;
+                if (this.collisionGrid[x][y]) continue; // Avoid obstacles!
 
                 const distance = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
                 

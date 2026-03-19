@@ -2,6 +2,8 @@ import { Scene, GameObjects } from 'phaser';
 import { Building } from '../data/buildings';
 import { MapScene } from './MapScene';
 import { getAnagramForCategory, Anagram } from '../data/anagrams';
+import cursorGauntletPng from '../../assets/ui/PNG/cursorGauntlet_bronze.png';
+import cursorHandPng from '../../assets/ui/PNG/cursorHand_beige.png';
 
 interface LetterSlot {
     letter: string;
@@ -14,17 +16,18 @@ export class AnagramScene extends Scene {
     private mapScene!: MapScene;
     private anagram!: Anagram;
     
-    private letterTiles: GameObjects.Text[] = [];
+    private letterTiles: GameObjects.Container[] = [];
     private guessArea: GameObjects.Rectangle[] = [];
     private slotData: LetterSlot[] = [];
     private lockedPositions: Set<number> = new Set();
-    private submitButton!: GameObjects.Text;
-    private resetButton!: GameObjects.Text;
-    private closeButton!: GameObjects.Text;
+    private submitButton!: GameObjects.Container;
+    private resetButton!: GameObjects.Container;
+    private closeButton!: GameObjects.Image;
     
     private isDragging: boolean = false;
-    private draggedTile: GameObjects.Text | null = null;
-    private originalPositions: Map<GameObjects.Text, { x: number, y: number }> = new Map();
+    private draggedTile: GameObjects.Container | null = null;
+    private originalPositions: Map<GameObjects.Container, { x: number, y: number }> = new Map();
+    private startClickPos: { x: number, y: number } = { x: 0, y: 0 };
 
     constructor() {
         super('AnagramScene');
@@ -61,9 +64,16 @@ export class AnagramScene extends Scene {
         const panelX = this.cameras.main.width / 2;
         const panelY = this.cameras.main.height / 2;
 
-        const panel = this.add.rectangle(panelX, panelY, panelWidth, panelHeight, 0x333333, 1);
+        const panel = this.add.nineslice(
+            panelX, 
+            panelY, 
+            'panel_brown', 
+            0, 
+            panelWidth, 
+            panelHeight,
+            32, 32, 32, 32
+        );
         panel.setScrollFactor(0);
-        panel.setStrokeStyle(2, 0xffffff);
 
         // Category label (matching QuizScene style)
         const categoryText = this.add.text(panelX, panelY - panelHeight/2 + 30, `[${this.building.category}]`, {
@@ -152,104 +162,113 @@ export class AnagramScene extends Scene {
 
         for (let i = 0; i < shuffledLetters.length; i++) {
             const letter = shuffledLetters[i];
-            const tile = this.add.text(poolX + i * tileWidth, startY, letter, {
+            // Use beige light panel for the letter tile (position relative to container is 0,0)
+            const tileBg = this.add.nineslice(0, 0, 'panel_beigeLight', 0, 35, 35, 10, 10, 10, 10);
+            
+            const tileText = this.add.text(0, 0, letter, {
                 fontFamily: 'Arial Black',
-                fontSize: '20px',
-                color: '#ffffff',
-                backgroundColor: '#555555',
-                padding: { x: 8, y: 4 },
+                fontSize: '18px',
+                color: '#5c4033', // Dark brown to contrast with beige
                 align: 'center'
-            })
-                .setOrigin(0.5)
-                .setDepth(100)
+            }).setOrigin(0.5);
+
+            const tile = this.add.container(poolX + i * tileWidth, startY, [tileBg, tileText]);
+            tile.setSize(35, 35);
+            tile.setDepth(100)
                 .setInteractive({ cursor: 'pointer' });
 
-            this.letterTiles.push(tile);
-            this.originalPositions.set(tile, { x: tile.x, y: tile.y });
-
-            // Add subtle shadow
-            const shadow = this.add.text(tile.x + 2, tile.y + 2, letter, {
-                fontFamily: 'Arial Black',
-                fontSize: '20px',
-                color: '#000000'
-            })
-                .setOrigin(0.5)
-                .setAlpha(0.3)
-                .setDepth(99);
+            this.letterTiles.push(tile as any);
+            this.originalPositions.set(tile as any, { x: tile.x, y: tile.y });
             
-            tile.setData('shadow', shadow);
+            tile.setData('tileBg', tileBg);
+            tile.setData('tileText', tileText);
         }
     }
 
     private createButtons(panelX: number, panelY: number, panelWidth: number, panelHeight: number): void {
         const buttonY = panelY + panelHeight/2 - 40;
         
+        const buttonWidth = 120;
+        const buttonHeight = 40;
+
         // Submit button
-        this.submitButton = this.add.text(panelX - 60, buttonY, 'CHECAR', {
+        const submitBg = this.add.nineslice(0, 0, 'buttonLong_beige', 0, buttonWidth, buttonHeight, 15, 15, 15, 15);
+        const submitText = this.add.text(0, 0, 'CHECAR', {
             fontSize: '16px',
-            color: '#ffffff',
-            backgroundColor: '#27ae60',
-            padding: { x: 12, y: 6 }
-        })
-            .setOrigin(0.5)
-            .setDepth(100)
-            .setInteractive({ cursor: 'pointer' });
+            color: '#5c4033',
+            fontStyle: 'bold'
+        }).setOrigin(0.5);
 
-        this.submitButton.on('pointerdown', () => {
-            this.checkAnswer();
-        });
+        this.submitButton = this.add.container(panelX - 70, buttonY, [submitBg, submitText]);
+        this.submitButton.setSize(buttonWidth, buttonHeight);
+        this.submitButton.setDepth(100).setInteractive({ cursor: 'pointer' });
 
-        this.submitButton.on('pointerover', () => {
-            this.submitButton.setBackgroundColor('#2ecc71');
-        });
-
-        this.submitButton.on('pointerout', () => {
-            this.submitButton.setBackgroundColor('#27ae60');
-        });
+        this.submitButton.on('pointerdown', () => this.checkAnswer());
+        this.submitButton.on('pointerover', () => submitBg.setTexture('buttonLong_beige_pressed'));
+        this.submitButton.on('pointerout', () => submitBg.setTexture('buttonLong_beige'));
 
         // Reset button
-        this.resetButton = this.add.text(panelX + 60, buttonY, 'LIMPAR', {
+        const resetBg = this.add.nineslice(0, 0, 'buttonLong_beige', 0, buttonWidth, buttonHeight, 15, 15, 15, 15);
+        const resetText = this.add.text(0, 0, 'LIMPAR', {
             fontSize: '16px',
-            color: '#ffffff',
-            backgroundColor: '#e74c3c',
-            padding: { x: 12, y: 6 }
-        })
+            color: '#5c4033',
+            fontStyle: 'bold'
+        }).setOrigin(0.5);
+
+        this.resetButton = this.add.container(panelX + 70, buttonY, [resetBg, resetText]);
+        this.resetButton.setSize(buttonWidth, buttonHeight);
+        this.resetButton.setDepth(100).setInteractive({ cursor: 'pointer' });
+
+        this.resetButton.on('pointerdown', () => this.resetGuess());
+        this.resetButton.on('pointerover', () => resetBg.setTexture('buttonLong_beige_pressed'));
+        this.resetButton.on('pointerout', () => resetBg.setTexture('buttonLong_beige'));
+
+        // Close button (Icon image)
+        this.closeButton = this.add.image(panelX + panelWidth / 2 - 24, panelY - panelHeight / 2 + 24, 'iconCross_brown')
+            .setInteractive({ cursor: 'pointer' })
             .setOrigin(0.5)
             .setDepth(100)
-            .setInteractive({ cursor: 'pointer' });
-
-        this.resetButton.on('pointerdown', () => {
-            this.resetGuess();
-        });
-
-        this.resetButton.on('pointerover', () => {
-            this.resetButton.setBackgroundColor('#c0392b');
-        });
-
-        this.resetButton.on('pointerout', () => {
-            this.resetButton.setBackgroundColor('#e74c3c');
-        });
-
-        // Close button (X) - matching QuizScene style (top-right of panel)
-        this.closeButton = this.add.text(panelX + panelWidth / 2 - 20, panelY - panelHeight / 2 + 20, 'X', {
-            fontSize: '24px',
-            color: '#ff0000',
-            fontStyle: 'bold'
-        })
-            .setOrigin(0.5)
-            .setInteractive()
             .setScrollFactor(0);
 
-        this.closeButton.on('pointerdown', () => {
-            this.closeScene();
-        });
-
+        this.closeButton.on('pointerdown', () => this.closeScene());
         this.closeButton.on('pointerover', () => {
-            this.closeButton.setColor('#ff8888');
+             this.input.setDefaultCursor(`url(${cursorHandPng}), pointer`);
+             this.closeButton.setTint(0xffbbbb);
+        });
+        this.closeButton.on('pointerout', () => {
+             this.input.setDefaultCursor(`url(${cursorGauntletPng}), default`);
+             this.closeButton.clearTint();
         });
 
-        this.closeButton.on('pointerout', () => {
-            this.closeButton.setColor('#ff0000');
+        // Add help button (?) in the top-left corner
+        const helpButton = this.add.container(panelX - panelWidth / 2 + 24, panelY - panelHeight / 2 + 24);
+        const helpBg = this.add.image(0, 0, 'buttonSquare_beige').setScale(0.8);
+        const helpText = this.add.text(0, 0, '?', {
+            fontSize: '20px',
+            color: '#5c4033',
+            fontStyle: 'bold'
+        }).setOrigin(0.5);
+        helpButton.add([helpBg, helpText]);
+        helpButton.setScrollFactor(0);
+        helpButton.setInteractive(new Phaser.Geom.Rectangle(-15, -15, 30, 30), Phaser.Geom.Rectangle.Contains);
+        helpButton.on('pointerover', () => {
+            this.input.setDefaultCursor(`url(${cursorHandPng}), pointer`);
+            helpBg.setTexture('buttonSquare_beige_pressed');
+        });
+        helpButton.on('pointerout', () => {
+            this.input.setDefaultCursor(`url(${cursorGauntletPng}), default`);
+            helpBg.setTexture('buttonSquare_beige');
+        });
+        helpButton.on('pointerdown', () => {
+            const tooltip = this.add.text(panelX, panelY + 130, 'DICA: Se tiver dúvidas, procure o NPC Mentor\nda região no mapa para receber uma pista!', {
+                fontSize: '14px',
+                color: '#ffff00',
+                backgroundColor: '#000000aa',
+                padding: { x: 10, y: 5 },
+                align: 'center'
+            }).setOrigin(0.5).setScrollFactor(0).setDepth(100);
+            
+            this.time.delayedCall(3000, () => tooltip.destroy());
         });
 
         // ESC key to close
@@ -277,55 +296,129 @@ export class AnagramScene extends Scene {
                     return;
                 }
 
-                this.isDragging = true;
+                this.isDragging = false; // Don't start dragging yet
                 this.draggedTile = tile;
                 this.children.bringToTop(tile);
-                
-                // Bring shadow to top as well
-                const shadow = tile.getData('shadow');
-                if (shadow) {
-                    this.children.bringToTop(shadow);
-                }
+                this.startClickPos = { x: tile.x, y: tile.y };
             });
 
             tile.on('pointermove', () => {
-                if (this.isDragging && this.draggedTile === tile) {
+                if (this.draggedTile === tile) {
                     const pointer = this.input.activePointer;
-                    tile.x = pointer.x;
-                    tile.y = pointer.y;
-                    
-                    // Update shadow position
-                    const shadow = tile.getData('shadow');
-                    if (shadow) {
-                        shadow.x = pointer.x + 2;
-                        shadow.y = pointer.y + 2;
+                    const distMoved = Phaser.Math.Distance.Between(this.startClickPos.x, this.startClickPos.y, pointer.x, pointer.y);
+
+                    // Only start dragging if we've moved enough
+                    if (!this.isDragging && distMoved > 10) {
+                        this.isDragging = true;
+                    }
+
+                    if (this.isDragging) {
+                        tile.x = pointer.x;
+                        tile.y = pointer.y;
+                        
+                        // Update shadow position
+                        const shadow = tile.getData('shadow');
+                        if (shadow) {
+                            shadow.x = pointer.x + 2;
+                            shadow.y = pointer.y + 2;
+                        }
                     }
                 }
             });
 
             tile.on('pointerup', () => {
                 if (this.draggedTile === tile) {
+                    if (!this.isDragging) {
+                        this.handleTileClick(tile);
+                    } else {
+                        this.checkDropZone(tile);
+                    }
                     this.isDragging = false;
                     this.draggedTile = null;
-                    
-                    // Check if dropped on guess area slot
-                    this.checkDropZone(tile);
                 }
             });
 
             tile.on('pointerupoutside', () => {
                 if (this.draggedTile === tile) {
+                    if (!this.isDragging) {
+                        this.handleTileClick(tile);
+                    } else {
+                        this.checkDropZone(tile);
+                    }
                     this.isDragging = false;
                     this.draggedTile = null;
-                    
-                    // Check if dropped on guess area slot
-                    this.checkDropZone(tile);
                 }
             });
         });
     }
 
-    private checkDropZone(tile: GameObjects.Text): void {
+    private handleTileClick(tile: GameObjects.Container): void {
+        const currentSlotIndex = tile.getData('slotIndex');
+        
+        if (currentSlotIndex !== undefined && currentSlotIndex >= 0) {
+            // Already in a slot, return to pool
+            this.returnTileToPool(tile);
+        } else {
+            // Find first empty slot
+            const emptySlotIndex = this.findFirstEmptySlot();
+            if (emptySlotIndex >= 0) {
+                this.autoPlaceInSlot(tile, emptySlotIndex);
+            }
+        }
+    }
+
+    private findFirstEmptySlot(): number {
+        for (let i = 0; i < this.guessArea.length; i++) {
+            if (this.lockedPositions.has(i)) continue;
+            
+            // Check if any tile is in this slot
+            let occupied = false;
+            for (const tile of this.letterTiles) {
+                if (tile.getData('slotIndex') === i) {
+                    occupied = true;
+                    break;
+                }
+            }
+            if (!occupied) return i;
+        }
+        return -1;
+    }
+
+    private autoPlaceInSlot(tile: GameObjects.Container, slotIndex: number): void {
+        const slot = this.guessArea[slotIndex];
+        
+        // Store original position if not already stored
+        if (!this.originalPositions.has(tile)) {
+            this.originalPositions.set(tile, { x: tile.x, y: tile.y });
+        }
+        
+        tile.setData('slotIndex', slotIndex);
+        
+        this.tweens.add({
+            targets: tile,
+            x: slot.x,
+            y: slot.y,
+            duration: 250,
+            ease: 'Back.easeOut'
+        });
+    }
+
+    private returnTileToPool(tile: GameObjects.Container): void {
+        const originalPos = this.originalPositions.get(tile);
+        if (originalPos) {
+            tile.setData('slotIndex', -1);
+            
+            this.tweens.add({
+                targets: tile,
+                x: originalPos.x,
+                y: originalPos.y,
+                duration: 250,
+                ease: 'Power2'
+            });
+        }
+    }
+
+    private checkDropZone(tile: GameObjects.Container): void {
         let droppedInSlot = false;
 
         for (let i = 0; i < this.guessArea.length; i++) {
@@ -411,7 +504,7 @@ export class AnagramScene extends Scene {
         
         for (let i = 0; i < this.guessArea.length; i++) {
             // Find which tile is in this slot
-            let tileInSlot: GameObjects.Text | null = null;
+            let tileInSlot: GameObjects.Container | null = null;
             for (const tile of this.letterTiles) {
                 if (tile.getData('slotIndex') === i) {
                     tileInSlot = tile;
@@ -420,7 +513,8 @@ export class AnagramScene extends Scene {
             }
             
             if (tileInSlot) {
-                guessArray.push(tileInSlot.text);
+                const tileText = tileInSlot.getData('tileText') as GameObjects.Text;
+                guessArray.push(tileText.text);
             } else {
                 allFilled = false;
                 break;
@@ -486,17 +580,12 @@ export class AnagramScene extends Scene {
             const slotIndex = tile.getData('slotIndex');
             if (slotIndex !== undefined && slotIndex >= 0 && this.lockedPositions.has(slotIndex)) {
                 // Update visual for locked tile
-                tile.setBackgroundColor('#3498DB'); // Blue color for correct
+                const tileBg = tile.getData('tileBg') as GameObjects.NineSlice;
+                tileBg.setTint(0x77bbff); // Light blue tint for correct
                 tile.setAlpha(1);
                 
                 // Disable interaction for locked tiles
                 tile.disableInteractive();
-                
-                // Add a visual indicator (small border or checkmark)
-                const shadow = tile.getData('shadow');
-                if (shadow) {
-                    shadow.setAlpha(0.5); // Make shadow more visible for locked tiles
-                }
             }
         });
     }
@@ -518,17 +607,7 @@ export class AnagramScene extends Scene {
                             ease: 'Power2'
                         });
                         
-                        // Update shadow position
-                        const shadow = tile.getData('shadow');
-                        if (shadow) {
-                            this.tweens.add({
-                                targets: shadow,
-                                x: originalPos.x + 2,
-                                y: originalPos.y + 2,
-                                duration: 300,
-                                ease: 'Power2'
-                            });
-                        }
+
                         
                         // Reset slot index
                         tile.setData('slotIndex', -1);
@@ -611,7 +690,8 @@ export class AnagramScene extends Scene {
     private showSuccess(): void {
         // Color all tiles green
         this.letterTiles.forEach(tile => {
-            tile.setBackgroundColor('#27ae60');
+            const tileBg = tile.getData('tileBg') as GameObjects.NineSlice;
+            tileBg.setTint(0x77ff77);
         });
 
         // Show success message (matching QuizScene style)
@@ -659,27 +739,15 @@ export class AnagramScene extends Scene {
                     ease: 'Power2'
                 });
 
-                // Reset color to original
-                tile.setBackgroundColor('#555555');
+                // Reset visual
+                const tileBg = tile.getData('tileBg') as GameObjects.NineSlice;
+                tileBg.clearTint();
                 
                 // Re-enable interaction
                 tile.setInteractive({ cursor: 'pointer' });
 
                 // Reset slot index
                 tile.setData('slotIndex', -1);
-
-                // Update shadow
-                const shadow = tile.getData('shadow');
-                if (shadow) {
-                    this.tweens.add({
-                        targets: shadow,
-                        x: originalPos.x + 2,
-                        y: originalPos.y + 2,
-                        duration: 300,
-                        ease: 'Power2'
-                    });
-                    shadow.setAlpha(0.3);
-                }
             }
         });
     }
@@ -695,10 +763,11 @@ export class AnagramScene extends Scene {
             const requiredLetter = this.anagram.name[index];
 
             // Find an available tile with the matching letter (not yet assigned to a slot)
-            const tile = this.letterTiles.find(t =>
-                t.text === requiredLetter &&
-                (t.getData('slotIndex') === undefined || t.getData('slotIndex') < 0)
-            );
+            const tile = this.letterTiles.find(t => {
+                const tileText = t.getData('tileText') as GameObjects.Text;
+                return tileText.text === requiredLetter &&
+                       (t.getData('slotIndex') === undefined || t.getData('slotIndex') < 0);
+            });
 
             if (tile) {
                 const slot = this.guessArea[index];
@@ -730,13 +799,6 @@ export class AnagramScene extends Scene {
             const pointer = this.input.activePointer;
             this.draggedTile.x = pointer.x;
             this.draggedTile.y = pointer.y;
-            
-            // Update shadow position
-            const shadow = this.draggedTile.getData('shadow');
-            if (shadow) {
-                shadow.x = pointer.x + 2;
-                shadow.y = pointer.y + 2;
-            }
         }
     }
 }
