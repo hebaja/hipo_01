@@ -20,6 +20,8 @@ import panelBeigeLightPng from '../../assets/ui/PNG/panel_beigeLight.png';
 import panelBrownPng from '../../assets/ui/PNG/panel_brown.png';
 import buttonLongBeigePng from '../../assets/ui/PNG/buttonLong_beige.png';
 import buttonLongBeigePressedPng from '../../assets/ui/PNG/buttonLong_beige_pressed.png';
+import buttonSquareBeigePng from '../../assets/ui/PNG/buttonSquare_beige.png';
+import buttonSquareBeigePressedPng from '../../assets/ui/PNG/buttonSquare_beige_pressed.png';
 import iconCrossBrownPng from '../../assets/ui/PNG/iconCross_brown.png';
 import cursorGauntletPng from '../../assets/ui/PNG/cursorGauntlet_bronze.png';
 
@@ -76,6 +78,8 @@ export class MapScene extends Scene {
         this.load.image('panel_beigeLight', panelBeigeLightPng);
         this.load.image('buttonLong_beige', buttonLongBeigePng);
         this.load.image('buttonLong_beige_pressed', buttonLongBeigePressedPng);
+        this.load.image('buttonSquare_beige', buttonSquareBeigePng);
+        this.load.image('buttonSquare_beige_pressed', buttonSquareBeigePressedPng);
         this.load.image('iconCross_brown', iconCrossBrownPng);
 
         // Load Icon Assets
@@ -121,9 +125,9 @@ export class MapScene extends Scene {
             });
         }
 
-        // Initialize map grid with tilemap data
+        // Initialize map grid with tilemap data and radii for stage calculation
         const mapData = this.cache.tilemap.get('city-map').data;
-        this.mapGrid.loadFromTilemap(mapData);
+        this.mapGrid.loadFromTilemap(mapData, this.RADII);
         
         // Generate NPCs in valid open spots
         this.mapGrid.generateNPCs(this.TOTAL_EXPANSIONS, this.RADII);

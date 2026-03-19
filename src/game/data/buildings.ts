@@ -55,7 +55,7 @@ export class MapGrid {
         return !this.collisionGrid[x][y];
     }
 
-    public loadFromTilemap(data: any) {
+    public loadFromTilemap(data: any, radii: number[]) {
         if (!data || !data.layers) return;
         this.grid = [];
         const buildingsLayer = data.layers.find((l: any) => l.name === 'buildings');
@@ -107,9 +107,11 @@ export class MapGrid {
         const categoryQuestionCount: { [category: string]: number } = {};
         categories.forEach(cat => categoryQuestionCount[cat.name] = 0);
 
+        const centerX = Math.floor(this.width / 2);
+        const centerY = Math.floor(this.height / 2);
+
         shuffledBuildings.forEach((pos, index) => {
             // Map GID to category (1-5 -> Escultura, Pintura, Fotografia, Música, Dança)
-            // Tiled GIDs start at firstgid (1 in our case)
             const catIndex = (pos.gid - 1) % categories.length;
             const categoryData = categories[catIndex];
             
@@ -117,6 +119,22 @@ export class MapGrid {
             const questionIndex = categoryQuestionCount[categoryData.name] % 2;
             const questionNumber = index + 1;
             categoryQuestionCount[categoryData.name]++;
+
+            // Calculate stage based on distance from center
+            const distance = Math.sqrt(Math.pow(pos.x - centerX, 2) + Math.pow(pos.y - centerY, 2));
+            let stage = 0;
+            for (let s = 0; s < radii.length; s++) {
+                const innerRadius = s === 0 ? 0 : radii[s - 1];
+                const outerRadius = radii[s];
+                if (distance >= innerRadius && distance < outerRadius) {
+                    stage = s;
+                    break;
+                }
+                // If distance is beyond the last radius, assign to the last stage
+                if (s === radii.length - 1 && distance >= outerRadius) {
+                    stage = s;
+                }
+            }
 
             this.grid.push({
                 x: pos.x,
@@ -127,7 +145,7 @@ export class MapGrid {
                 questionIndex: questionIndex,
                 questionNumber: questionNumber,
                 wrongAttempts: 0,
-                stage: 0, // Tilemap buildings don't have rings/stages yet, set to 0
+                stage: stage,
                 lastHintIndex: 0,
                 painterIndex: -1,
                 wordPositions: [],

@@ -211,9 +211,39 @@ export class MemoryGameScene extends Scene {
              this.closeButton.clearTint();
         });
 
-        // ESC key to close
         this.input.keyboard?.on('keydown-ESC', () => {
             this.closeScene();
+        });
+
+        // Add help button (?) in the top-left corner
+        const helpButton = this.add.container(panelX - this.panelWidth / 2 + 24, panelY - this.panelHeight / 2 + 24);
+        const helpBg = this.add.image(0, 0, 'buttonSquare_beige').setScale(0.8);
+        const helpText = this.add.text(0, 0, '?', {
+            fontSize: '20px',
+            color: '#5c4033',
+            fontStyle: 'bold'
+        }).setOrigin(0.5);
+        helpButton.add([helpBg, helpText]);
+        helpButton.setScrollFactor(0);
+        helpButton.setInteractive(new Phaser.Geom.Rectangle(-15, -15, 30, 30), Phaser.Geom.Rectangle.Contains);
+        helpButton.on('pointerover', () => {
+            this.input.setDefaultCursor(`url(${cursorHandPng}), pointer`);
+            helpBg.setTexture('buttonSquare_beige_pressed');
+        });
+        helpButton.on('pointerout', () => {
+            this.input.setDefaultCursor(`url(${cursorGauntletPng}), default`);
+            helpBg.setTexture('buttonSquare_beige');
+        });
+        helpButton.on('pointerdown', () => {
+            const tooltip = this.add.text(panelX, panelY + this.panelHeight / 2 - 40, 'DICA: Se tiver dúvidas, procure o NPC Mentor\nda região no mapa para receber uma pista!', {
+                fontSize: '14px',
+                color: '#ffff00',
+                backgroundColor: '#000000aa',
+                padding: { x: 10, y: 5 },
+                align: 'center'
+            }).setOrigin(0.5).setScrollFactor(0).setDepth(100);
+            
+            this.time.delayedCall(3000, () => tooltip.destroy());
         });
     }
 
