@@ -1,5 +1,9 @@
 import { MapScene } from './scenes/MapScene';
 import { QuizScene } from './scenes/QuizScene';
+import { AnagramScene } from './scenes/AnagramScene';
+import { TwoTruthsOneLieScene } from './scenes/TwoTruthsOneLieScene';
+import { WordSearchScene } from './scenes/WordSearchScene';
+import { MemoryGameScene } from './scenes/MemoryGameScene';
 import { AUTO, Game, Scale,Types } from 'phaser';
 
 // Find out more information about the Game Config at:
@@ -19,7 +23,11 @@ const config: Types.Core.GameConfig = {
     },
     scene: [
         MapScene,
-        QuizScene
+        QuizScene,
+        AnagramScene,
+        TwoTruthsOneLieScene,
+        WordSearchScene,
+        MemoryGameScene
     ]
 };
 

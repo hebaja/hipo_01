@@ -2,6 +2,9 @@ import { Scene } from 'phaser';
 import { MapGrid, Building, NPC } from '../data/buildings';
 import { Player } from '../objects/Player';
 import { quizQuestions } from '../data/questions';
+import { getAnagramForCategory } from '../data/anagrams';
+import { PAINTER_FACTS } from '../data/twoTruthsOneLie';
+import { memoryGameData } from '../data/memoryGame';
 import maleAdventurerPng from '../../assets/sprites/Male adventurer/Tilesheet/character_maleAdventurer_sheet.png';
 import maleAdventurerXml from '../../assets/sprites/Male adventurer/Tilesheet/character_maleAdventurer_sheet.xml?url';
 
@@ -403,24 +406,51 @@ export class MapScene extends Scene {
     }
 
     private startQuiz(building: Building) {
-        // Filter questions by category
-        const categoryQuestions = quizQuestions.filter(q => q.category === building.category);
+        // Use the building's persistent challenge type
+        if (building.challengeType === 'anagram') {
+            // Launch anagram scene
+            this.scene.launch('AnagramScene', {
+                building: building,
+                mapScene: this
+            });
+        } else if (building.challengeType === 'twoTruthsOneLie') {
+            // Launch Two Truths and a Lie scene
+            this.scene.launch('TwoTruthsOneLieScene', {
+                building: building,
+                mapScene: this
+            });
+        } else if (building.challengeType === 'wordSearch') {
+            // Launch Word Search scene
+            this.scene.launch('WordSearchScene', {
+                building: building,
+                mapScene: this
+            });
+        } else if (building.challengeType === 'memoryGame') {
+            // Launch Memory Game scene
+            this.scene.launch('MemoryGameScene', {
+                building: building,
+                mapScene: this
+            });
+        } else {
+            // Filter questions by category
+            const categoryQuestions = quizQuestions.filter(q => q.category === building.category);
+            
+            if (categoryQuestions.length === 0) {
+                console.error(`Nenhuma questão encontrada para a categoria: ${building.category}`);
+                return;
+            }
 
-        if (categoryQuestions.length === 0) {
-            console.error(`Nenhuma questão encontrada para a categoria: ${building.category}`);
-            return;
+            // Use stored question index (assigned during generation)
+            const question = categoryQuestions[building.questionIndex];
+
+            // Launch quiz scene with persistent question
+            this.scene.launch('QuizScene', {
+                question: question,
+                building: building,
+                mapScene: this
+            });
         }
-
-        // Use stored question index (assigned during generation)
-        const question = categoryQuestions[building.questionIndex];
-
-        // Launch quiz scene with persistent question
-        this.scene.launch('QuizScene', {
-            question: question,
-            building: building,
-            mapScene: this
-        });
-
+        
         // Pause this scene
         this.scene.pause();
     }
@@ -550,14 +580,43 @@ export class MapScene extends Scene {
 
         let message = '';
         if (buildingWithError) {
-            const categoryQuestions = quizQuestions.filter(q => q.category === buildingWithError.category);
-            const question = categoryQuestions[buildingWithError.questionIndex];
+            if (buildingWithError.challengeType === 'anagram') {
+                const anagram = getAnagramForCategory(buildingWithError.category);
+                const hint = anagram.hints[buildingWithError.lastHintIndex % anagram.hints.length];
+                buildingWithError.lastHintIndex++;
+                message = `${npc.name}: Percebi que você teve dificuldade em ${buildingWithError.category}.\n\nDica: ${hint}`;
+            } else if (buildingWithError.challengeType === 'twoTruthsOneLie') {
+                const painter = PAINTER_FACTS[buildingWithError.painterIndex];
+                const hint = painter.hints[buildingWithError.lastHintIndex % painter.hints.length];
+                buildingWithError.lastHintIndex++;
+                message = `${npc.name}: Percebi que você teve dificuldade em ${buildingWithError.category}.\n\nDica: ${hint}`;
+            } else if (buildingWithError.challengeType === 'wordSearch') {
+                const unfoundWords = buildingWithError.wordPositions.filter(
+                    wp => !buildingWithError.foundWords.includes(wp.word)
+                );
+                if (unfoundWords.length > 0) {
+                    const wp = unfoundWords[buildingWithError.lastHintIndex % unfoundWords.length];
+                    buildingWithError.lastHintIndex++;
+                    const direction = (wp.dx !== 0) ? 'horizontal' : 'vertical';
+                    message = `${npc.name}: Percebi que você teve dificuldade em ${buildingWithError.category}.\n\nDica: A palavra ${wp.word} está na ${direction}.`;
+                } else {
+                    message = `${npc.name}: Você está indo muito bem nesta área!\nContinue explorando as redondezas.`;
+                }
+            } else if (buildingWithError.challengeType === 'memoryGame') {
+                const gameData = memoryGameData[buildingWithError.category];
+                const hint = gameData.hints[buildingWithError.lastHintIndex % gameData.hints.length];
+                buildingWithError.lastHintIndex++;
+                message = `${npc.name}: Percebi que você teve dificuldade em ${buildingWithError.category}.\n\nDica: ${hint}`;
+            } else {
+                const categoryQuestions = quizQuestions.filter(q => q.category === buildingWithError.category);
+                const question = categoryQuestions[buildingWithError.questionIndex];
 
-            // Get the current hint from the 5-hint sequence and increment
-            const hint = question.hints[buildingWithError.lastHintIndex % 5];
-            buildingWithError.lastHintIndex++;
+                // Get the current hint from the 5-hint sequence and increment
+                const hint = question.hints[buildingWithError.lastHintIndex % 5];
+                buildingWithError.lastHintIndex++;
 
-            message = `${npc.name}: Percebi que você teve dificuldade em ${buildingWithError.category}.\n\nDica: ${hint}`;
+                message = `${npc.name}: Percebi que você teve dificuldade em ${buildingWithError.category}.\n\nDica: ${hint}`;
+            }
         } else {
             message = `${npc.name}: Você está indo muito bem nesta área!\nContinue explorando as redondezas.`;
         }

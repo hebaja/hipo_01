@@ -8,9 +8,16 @@ export interface Building {
     conquered: boolean;
     questionIndex: number;
     questionNumber: number;
-    wrongAttempts: number;
     stage: number;
     lastHintIndex: number;
+    wrongAttempts: number;
+    painterIndex: number;
+    wordPositions: { word: string, startX: number, startY: number, dx: number, dy: number }[];
+    gridLetters: string[][];
+    foundWords: string[];
+    matchedPairIds: string[];
+    lockedPositions: number[];
+    challengeType: 'quiz' | 'anagram' | 'twoTruthsOneLie' | 'wordSearch' | 'memoryGame';
 }
 
 export interface NPC {
@@ -52,6 +59,21 @@ export class MapGrid {
             categoryQuestionCount[cat.name] = 0;
         });
 
+        // Calculate challenge type distribution (even split between 5 types)
+        const types: ('quiz' | 'anagram' | 'twoTruthsOneLie' | 'wordSearch' | 'memoryGame')[] = ['quiz', 'anagram', 'twoTruthsOneLie', 'wordSearch', 'memoryGame'];
+        const challengeTypes: ('quiz' | 'anagram' | 'twoTruthsOneLie' | 'wordSearch' | 'memoryGame')[] = [];
+        
+        // Distribute evenly (round-robin)
+        for (let i = 0; i < totalCount; i++) {
+            challengeTypes.push(types[i % types.length]);
+        }
+        
+        // Fisher-Yates shuffle to randomize the order of the evenly distributed types
+        for (let i = challengeTypes.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [challengeTypes[i], challengeTypes[j]] = [challengeTypes[j], challengeTypes[i]];
+        }
+
         for (let s = 0; s < stages; s++) {
             const innerRadius = s === 0 ? 0 : radii[s - 1];
             const outerRadius = radii[s];
@@ -89,6 +111,9 @@ export class MapGrid {
                     const questionNumber = Object.values(categoryQuestionCount).reduce((a, b) => a + b, 0) + 1;
                     categoryQuestionCount[categoryData.name]++;
 
+                    // Get challenge type from shuffled array
+                    const challengeType = challengeTypes[this.grid.length];
+
                     this.grid.push({
                         x,
                         y,
@@ -99,7 +124,14 @@ export class MapGrid {
                         questionNumber: questionNumber,
                         wrongAttempts: 0,
                         stage: s,
-                        lastHintIndex: 0
+                        lastHintIndex: 0,
+                        painterIndex: -1,
+                        wordPositions: [],
+                        gridLetters: [],
+                        foundWords: [],
+                        matchedPairIds: [],
+                        lockedPositions: [],
+                        challengeType: challengeType
                     });
                     placedInStage++;
                 }
