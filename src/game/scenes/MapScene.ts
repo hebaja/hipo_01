@@ -2,6 +2,7 @@ import { Scene } from 'phaser';
 import { MapGrid, Building, NPC } from '../data/buildings';
 import { Player } from '../objects/Player';
 import { quizQuestions } from '../data/questions';
+import { getAnagramForCategory } from '../data/anagrams';
 import maleAdventurerPng from '../../assets/sprites/Male adventurer/Tilesheet/character_maleAdventurer_sheet.png';
 import maleAdventurerXml from '../../assets/sprites/Male adventurer/Tilesheet/character_maleAdventurer_sheet.xml?url';
 
@@ -577,14 +578,21 @@ export class MapScene extends Scene {
 
         let message = '';
         if (buildingWithError) {
-            const categoryQuestions = quizQuestions.filter(q => q.category === buildingWithError.category);
-            const question = categoryQuestions[buildingWithError.questionIndex];
+            if (buildingWithError.challengeType === 'anagram') {
+                const anagram = getAnagramForCategory(buildingWithError.category);
+                const hint = anagram.hints[buildingWithError.lastHintIndex % anagram.hints.length];
+                buildingWithError.lastHintIndex++;
+                message = `${npc.name}: Percebi que você teve dificuldade em ${buildingWithError.category}.\n\nDica: ${hint}`;
+            } else {
+                const categoryQuestions = quizQuestions.filter(q => q.category === buildingWithError.category);
+                const question = categoryQuestions[buildingWithError.questionIndex];
 
-            // Get the current hint from the 5-hint sequence and increment
-            const hint = question.hints[buildingWithError.lastHintIndex % 5];
-            buildingWithError.lastHintIndex++;
+                // Get the current hint from the 5-hint sequence and increment
+                const hint = question.hints[buildingWithError.lastHintIndex % 5];
+                buildingWithError.lastHintIndex++;
 
-            message = `${npc.name}: Percebi que você teve dificuldade em ${buildingWithError.category}.\n\nDica: ${hint}`;
+                message = `${npc.name}: Percebi que você teve dificuldade em ${buildingWithError.category}.\n\nDica: ${hint}`;
+            }
         } else {
             message = `${npc.name}: Você está indo muito bem nesta área!\nContinue explorando as redondezas.`;
         }

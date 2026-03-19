@@ -8,8 +8,18 @@ export interface Building {
     conquered: boolean;
     questionIndex: number;
     questionNumber: number;
+    stage: number;
+    lastHintIndex: number;
     wrongAttempts: number;
     challengeType: 'quiz' | 'anagram' | 'twoTruthsOneLie' | 'wordSearch' | 'memoryGame';
+}
+
+export interface NPC {
+    x: number;
+    y: number;
+    stage: number;
+    name: string;
+    type: string;
 }
 
 export class MapGrid {
@@ -108,7 +118,7 @@ export class MapGrid {
                         questionNumber: questionNumber,
                         wrongAttempts: 0,
                         stage: s,
-                        lastHintIndex: 0
+                        lastHintIndex: 0,
                         challengeType: challengeType
                     });
                     placedInStage++;

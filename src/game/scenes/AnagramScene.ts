@@ -237,7 +237,11 @@ export class AnagramScene extends Scene {
 
         this.closeButton.on('pointerdown', () => {
             this.scene.stop();
-            this.mapScene.onQuizComplete(null, this.building);
+            if (this.building.wrongAttempts > 0) {
+                this.mapScene.onQuizComplete(false, this.building);
+            } else {
+                this.mapScene.onQuizComplete(null, this.building);
+            }
         });
 
         this.closeButton.on('pointerover', () => {
@@ -441,13 +445,19 @@ export class AnagramScene extends Scene {
 
                 // Return incorrect tiles to pool
                 this.returnIncorrectTiles(correctPositions);
+
+                // Track wrong attempt for NPC hints
+                this.building.wrongAttempts++;
                 
                 // Show hint (art style hint from anagram data)
                 this.showHint();
             } else {
                 // No correct positions, shake all tiles
                 this.shakeTiles();
-                
+
+                // Track wrong attempt for NPC hints
+                this.building.wrongAttempts++;
+
                 // Show hint (art style hint from anagram data)
                 this.showHint();
             }
@@ -600,8 +610,8 @@ export class AnagramScene extends Scene {
         resultText.setOrigin(0.5);
         resultText.setScrollFactor(0);
 
-        // Reset wrong attempts on correct answer (if we were tracking them)
-        // this.building.wrongAttempts = 0;
+        // Reset wrong attempts on correct answer
+        this.building.wrongAttempts = 0;
 
         // Disable buttons
         this.submitButton.disableInteractive();
