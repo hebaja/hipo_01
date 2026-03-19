@@ -27,6 +27,7 @@ export class AnagramScene extends Scene {
     private isDragging: boolean = false;
     private draggedTile: GameObjects.Container | null = null;
     private originalPositions: Map<GameObjects.Container, { x: number, y: number }> = new Map();
+    private startClickPos: { x: number, y: number } = { x: 0, y: 0 };
 
     constructor() {
         super('AnagramScene');
@@ -295,46 +296,126 @@ export class AnagramScene extends Scene {
                     return;
                 }
 
-                this.isDragging = true;
+                this.isDragging = false; // Don't start dragging yet
                 this.draggedTile = tile;
                 this.children.bringToTop(tile);
+                this.startClickPos = { x: tile.x, y: tile.y };
             });
 
             tile.on('pointermove', () => {
-                if (this.isDragging && this.draggedTile === tile) {
+                if (this.draggedTile === tile) {
                     const pointer = this.input.activePointer;
-                    tile.x = pointer.x;
-                    tile.y = pointer.y;
-                    
-                    // Update shadow position
-                    const shadow = tile.getData('shadow');
-                    if (shadow) {
-                        shadow.x = pointer.x + 2;
-                        shadow.y = pointer.y + 2;
+                    const distMoved = Phaser.Math.Distance.Between(this.startClickPos.x, this.startClickPos.y, pointer.x, pointer.y);
+
+                    // Only start dragging if we've moved enough
+                    if (!this.isDragging && distMoved > 10) {
+                        this.isDragging = true;
+                    }
+
+                    if (this.isDragging) {
+                        tile.x = pointer.x;
+                        tile.y = pointer.y;
+                        
+                        // Update shadow position
+                        const shadow = tile.getData('shadow');
+                        if (shadow) {
+                            shadow.x = pointer.x + 2;
+                            shadow.y = pointer.y + 2;
+                        }
                     }
                 }
             });
 
             tile.on('pointerup', () => {
                 if (this.draggedTile === tile) {
+                    if (!this.isDragging) {
+                        this.handleTileClick(tile);
+                    } else {
+                        this.checkDropZone(tile);
+                    }
                     this.isDragging = false;
                     this.draggedTile = null;
-                    
-                    // Check if dropped on guess area slot
-                    this.checkDropZone(tile);
                 }
             });
 
             tile.on('pointerupoutside', () => {
                 if (this.draggedTile === tile) {
+                    if (!this.isDragging) {
+                        this.handleTileClick(tile);
+                    } else {
+                        this.checkDropZone(tile);
+                    }
                     this.isDragging = false;
                     this.draggedTile = null;
-                    
-                    // Check if dropped on guess area slot
-                    this.checkDropZone(tile);
                 }
             });
         });
+    }
+
+    private handleTileClick(tile: GameObjects.Container): void {
+        const currentSlotIndex = tile.getData('slotIndex');
+        
+        if (currentSlotIndex !== undefined && currentSlotIndex >= 0) {
+            // Already in a slot, return to pool
+            this.returnTileToPool(tile);
+        } else {
+            // Find first empty slot
+            const emptySlotIndex = this.findFirstEmptySlot();
+            if (emptySlotIndex >= 0) {
+                this.autoPlaceInSlot(tile, emptySlotIndex);
+            }
+        }
+    }
+
+    private findFirstEmptySlot(): number {
+        for (let i = 0; i < this.guessArea.length; i++) {
+            if (this.lockedPositions.has(i)) continue;
+            
+            // Check if any tile is in this slot
+            let occupied = false;
+            for (const tile of this.letterTiles) {
+                if (tile.getData('slotIndex') === i) {
+                    occupied = true;
+                    break;
+                }
+            }
+            if (!occupied) return i;
+        }
+        return -1;
+    }
+
+    private autoPlaceInSlot(tile: GameObjects.Container, slotIndex: number): void {
+        const slot = this.guessArea[slotIndex];
+        
+        // Store original position if not already stored
+        if (!this.originalPositions.has(tile)) {
+            this.originalPositions.set(tile, { x: tile.x, y: tile.y });
+        }
+        
+        tile.setData('slotIndex', slotIndex);
+        
+        this.tweens.add({
+            targets: tile,
+            x: slot.x,
+            y: slot.y,
+            duration: 250,
+            ease: 'Back.easeOut'
+        });
+    }
+
+    private returnTileToPool(tile: GameObjects.Container): void {
+        const originalPos = this.originalPositions.get(tile);
+        if (originalPos) {
+            tile.setData('slotIndex', -1);
+            
+            this.tweens.add({
+                targets: tile,
+                x: originalPos.x,
+                y: originalPos.y,
+                duration: 250,
+                ease: 'Power2'
+            });
+        }
     }
 
     private checkDropZone(tile: GameObjects.Container): void {
