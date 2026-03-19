@@ -172,8 +172,7 @@ export class QuizScene extends Scene {
         closeButton.setScrollFactor(0);
 
         closeButton.on('pointerdown', () => {
-            this.scene.stop();
-            this.mapScene.onQuizComplete(null, this.building);
+            this.closeScene();
         });
 
         // Add visual cue on hover
@@ -184,6 +183,16 @@ export class QuizScene extends Scene {
         closeButton.on('pointerout', () => {
              closeButton.clearTint();
         });
+
+        // ESC key to close
+        this.input.keyboard?.on('keydown-ESC', () => {
+            this.closeScene();
+        });
+    }
+
+    private closeScene(): void {
+        this.scene.stop();
+        this.mapScene.onQuizComplete(null, this.building);
     }
 
     private selectAnswer(selectedIndex: number) {

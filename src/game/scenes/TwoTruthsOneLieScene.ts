@@ -95,8 +95,7 @@ export class TwoTruthsOneLieScene extends Scene {
         this.closeButton.setScrollFactor(0);
 
         this.closeButton.on('pointerdown', () => {
-            this.scene.stop();
-            this.mapScene.onQuizComplete(null, this.building);
+            this.closeScene();
         });
 
         this.closeButton.on('pointerover', () => {
@@ -106,6 +105,16 @@ export class TwoTruthsOneLieScene extends Scene {
         this.closeButton.on('pointerout', () => {
              this.closeButton.clearTint();
         });
+
+        // ESC key to close
+        this.input.keyboard?.on('keydown-ESC', () => {
+            this.closeScene();
+        });
+    }
+
+    private closeScene(): void {
+        this.scene.stop();
+        this.mapScene.onQuizComplete(null, this.building);
     }
 
     private startGame(panelX: number, panelY: number, panelWidth: number) {

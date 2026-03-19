@@ -15,6 +15,8 @@ export interface Building {
     wordPositions: { word: string, startX: number, startY: number, dx: number, dy: number }[];
     gridLetters: string[][];
     foundWords: string[];
+    matchedPairIds: string[];
+    lockedPositions: number[];
     challengeType: 'quiz' | 'anagram' | 'twoTruthsOneLie' | 'wordSearch' | 'memoryGame';
 }
 
@@ -127,6 +129,8 @@ export class MapGrid {
                         wordPositions: [],
                         gridLetters: [],
                         foundWords: [],
+                        matchedPairIds: [],
+                        lockedPositions: [],
                         challengeType: challengeType
                     });
                     placedInStage++;

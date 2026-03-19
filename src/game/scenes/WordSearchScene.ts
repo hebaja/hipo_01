@@ -159,14 +159,7 @@ export class WordSearchScene extends Scene {
         this.closeButton.setScrollFactor(0);
 
         this.closeButton.on('pointerdown', () => {
-            this.scene.stop();
-            const unfoundCount = this.words.length - this.building.foundWords.length;
-            if (unfoundCount > 0) {
-                this.building.wrongAttempts++;
-                this.mapScene.onQuizComplete(false, this.building);
-            } else {
-                this.mapScene.onQuizComplete(null, this.building);
-            }
+            this.closeScene();
         });
 
         this.closeButton.on('pointerover', () => {
@@ -177,11 +170,27 @@ export class WordSearchScene extends Scene {
              this.closeButton.clearTint();
         });
 
+        // ESC key to close
+        this.input.keyboard?.on('keydown-ESC', () => {
+            this.closeScene();
+        });
+
         // Setup input
         this.input.on('pointerdown', this.onPointerDown, this);
         this.input.on('pointermove', this.onPointerMove, this);
         this.input.on('pointerup', this.onPointerUp, this);
         this.input.on('pointerupoutside', this.onPointerUp, this);
+    }
+
+    private closeScene(): void {
+        this.scene.stop();
+        const unfoundCount = this.words.length - this.building.foundWords.length;
+        if (unfoundCount > 0) {
+            this.building.wrongAttempts++;
+            this.mapScene.onQuizComplete(false, this.building);
+        } else {
+            this.mapScene.onQuizComplete(null, this.building);
+        }
     }
 
     private generateGrid(): void {

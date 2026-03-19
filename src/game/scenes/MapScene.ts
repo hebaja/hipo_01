@@ -4,6 +4,7 @@ import { Player } from '../objects/Player';
 import { quizQuestions } from '../data/questions';
 import { getAnagramForCategory } from '../data/anagrams';
 import { PAINTER_FACTS } from '../data/twoTruthsOneLie';
+import { memoryGameData } from '../data/memoryGame';
 import maleAdventurerPng from '../../assets/sprites/Male adventurer/Tilesheet/character_maleAdventurer_sheet.png';
 import maleAdventurerXml from '../../assets/sprites/Male adventurer/Tilesheet/character_maleAdventurer_sheet.xml?url';
 
@@ -601,6 +602,11 @@ export class MapScene extends Scene {
                 } else {
                     message = `${npc.name}: Você está indo muito bem nesta área!\nContinue explorando as redondezas.`;
                 }
+            } else if (buildingWithError.challengeType === 'memoryGame') {
+                const gameData = memoryGameData[buildingWithError.category];
+                const hint = gameData.hints[buildingWithError.lastHintIndex % gameData.hints.length];
+                buildingWithError.lastHintIndex++;
+                message = `${npc.name}: Percebi que você teve dificuldade em ${buildingWithError.category}.\n\nDica: ${hint}`;
             } else {
                 const categoryQuestions = quizQuestions.filter(q => q.category === buildingWithError.category);
                 const question = categoryQuestions[buildingWithError.questionIndex];

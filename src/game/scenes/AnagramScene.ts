@@ -112,6 +112,11 @@ export class AnagramScene extends Scene {
 
         // Setup input events
         this.setupInputEvents();
+
+        // Restore locked positions from previous session
+        if (this.building.lockedPositions.length > 0) {
+            this.restoreLockedPositions();
+        }
     }
 
     private createGuessArea(panelX: number, panelY: number): void {
@@ -236,12 +241,7 @@ export class AnagramScene extends Scene {
             .setScrollFactor(0);
 
         this.closeButton.on('pointerdown', () => {
-            this.scene.stop();
-            if (this.building.wrongAttempts > 0) {
-                this.mapScene.onQuizComplete(false, this.building);
-            } else {
-                this.mapScene.onQuizComplete(null, this.building);
-            }
+            this.closeScene();
         });
 
         this.closeButton.on('pointerover', () => {
@@ -251,6 +251,20 @@ export class AnagramScene extends Scene {
         this.closeButton.on('pointerout', () => {
             this.closeButton.setColor('#ff0000');
         });
+
+        // ESC key to close
+        this.input.keyboard?.on('keydown-ESC', () => {
+            this.closeScene();
+        });
+    }
+
+    private closeScene(): void {
+        this.scene.stop();
+        if (this.building.wrongAttempts > 0) {
+            this.mapScene.onQuizComplete(false, this.building);
+        } else {
+            this.mapScene.onQuizComplete(null, this.building);
+        }
     }
 
     private setupInputEvents(): void {
@@ -440,6 +454,9 @@ export class AnagramScene extends Scene {
                     this.lockedPositions.add(pos);
                 });
 
+                // Persist locked positions to building
+                this.building.lockedPositions = [...this.lockedPositions];
+
                 // Update visual appearance of locked tiles
                 this.updateLockedTiles();
 
@@ -612,6 +629,7 @@ export class AnagramScene extends Scene {
 
         // Reset wrong attempts on correct answer
         this.building.wrongAttempts = 0;
+        this.building.lockedPositions = [];
 
         // Disable buttons
         this.submitButton.disableInteractive();
@@ -664,6 +682,46 @@ export class AnagramScene extends Scene {
                 }
             }
         });
+    }
+
+    private restoreLockedPositions(): void {
+        // Rebuild locked positions from building data
+        this.building.lockedPositions.forEach(index => {
+            this.lockedPositions.add(index);
+        });
+
+        // For each locked position, find a matching tile in the pool and snap it to the slot
+        for (const index of this.building.lockedPositions) {
+            const requiredLetter = this.anagram.name[index];
+
+            // Find an available tile with the matching letter (not yet assigned to a slot)
+            const tile = this.letterTiles.find(t =>
+                t.text === requiredLetter &&
+                (t.getData('slotIndex') === undefined || t.getData('slotIndex') < 0)
+            );
+
+            if (tile) {
+                const slot = this.guessArea[index];
+
+                // Snap tile to slot position
+                tile.x = slot.x;
+                tile.y = slot.y;
+
+                // Update shadow position
+                const shadow = tile.getData('shadow');
+                if (shadow) {
+                    shadow.x = slot.x + 2;
+                    shadow.y = slot.y + 2;
+                }
+
+                // Update slot data
+                tile.setData('slotIndex', index);
+                this.slotData[index].isLocked = true;
+            }
+        }
+
+        // Apply locked visual styling
+        this.updateLockedTiles();
     }
 
     update() {

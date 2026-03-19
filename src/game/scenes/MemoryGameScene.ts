@@ -64,7 +64,6 @@ export class MemoryGameScene extends Scene {
         // Clear any existing cards from previous sessions
         this.cards = [];
         this.flippedCards = [];
-        this.matchedPairs = 0;
         this.isLocked = false;
 
         // Dark overlay
@@ -111,8 +110,12 @@ export class MemoryGameScene extends Scene {
 
         // Get memory game data for this category
         const memoryGameData = getMemoryGameForCategory(this.building.category);
-        
-        // Create card data: each pair has an image and a word card
+
+        // Use full pair count and restore matched count from building
+        this.totalPairs = memoryGameData.pairs.length;
+        this.matchedPairs = this.building.matchedPairIds.length;
+
+        // Create card data: each pair has an image and a word card (include ALL pairs)
         const cardData: CardData[] = [];
         memoryGameData.pairs.forEach((pair: MemoryGamePair) => {
             cardData.push({
@@ -160,6 +163,36 @@ export class MemoryGameScene extends Scene {
             }
         }
 
+        // Mark already-matched pairs as pre-flipped
+        this.cards.forEach(card => {
+            const pairId = card.getData('pairId');
+            if (this.building.matchedPairIds.includes(pairId)) {
+                card.setData('isMatched', true);
+
+                // Hide back, show front
+                const backSprite = card.getData('backSprite');
+                backSprite.visible = false;
+                backSprite.setTint(0x00ff00);
+
+                const cardType = card.getData('cardType');
+                if (cardType === 'image') {
+                    const frontSprite = card.getData('frontSprite');
+                    if (frontSprite) {
+                        frontSprite.visible = true;
+                        const cardId = card.getData('cardId');
+                        frontSprite.setTexture(cardId);
+                        frontSprite.setDisplaySize(this.cardWidth, this.cardHeight);
+                    }
+                } else {
+                    const frontText = card.getData('frontText');
+                    if (frontText) frontText.visible = true;
+                }
+
+                // Disable interaction
+                card.disableInteractive();
+            }
+        });
+
         // Close button (Icon image instead of text)
         this.closeButton = this.add.image(panelX + this.panelWidth / 2 - 24, panelY - this.panelHeight / 2 + 24, 'iconCross_brown')
             .setInteractive({ cursor: `url(${cursorHandPng}), pointer` })
@@ -167,8 +200,7 @@ export class MemoryGameScene extends Scene {
         this.closeButton.setScrollFactor(0);
 
         this.closeButton.on('pointerdown', () => {
-            this.scene.stop();
-            this.mapScene.onQuizComplete(null, this.building);
+            this.closeScene();
         });
 
         this.closeButton.on('pointerover', () => {
@@ -178,6 +210,21 @@ export class MemoryGameScene extends Scene {
         this.closeButton.on('pointerout', () => {
              this.closeButton.clearTint();
         });
+
+        // ESC key to close
+        this.input.keyboard?.on('keydown-ESC', () => {
+            this.closeScene();
+        });
+    }
+
+    private closeScene(): void {
+        this.scene.stop();
+        if (this.matchedPairs < this.totalPairs) {
+            this.building.wrongAttempts++;
+            this.mapScene.onQuizComplete(false, this.building);
+        } else {
+            this.mapScene.onQuizComplete(null, this.building);
+        }
     }
 
     private startLoading() {
@@ -324,6 +371,7 @@ export class MemoryGameScene extends Scene {
             if (back2) back2.setTint(0x00ff00);
             
             this.matchedPairs++;
+            this.building.matchedPairIds.push(pairId1);
             this.flippedCards = [];
             this.isLocked = false;
 
