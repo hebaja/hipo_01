@@ -243,33 +243,6 @@ export class MapGrid {
             if (isBlocked || isOutOfZone) {
                 console.error(`NPC for stage ${s} at (${pos.x}, ${pos.y}) is ${isBlocked ? 'BLOCKED' : 'OUT OF ZONE'}`);
                 continue;
-                if (positions.has(posKey)) continue;
-                if (this.collisionGrid[x][y]) continue; // Avoid obstacles!
-
-                const distance = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
-                
-                // Use slightly more exclusive boundaries to prevent overlap between stages
-                const isWithinZone = s === 0 
-                    ? distance < outerRadius 
-                    : distance >= innerRadius && distance < outerRadius;
-
-                if (isWithinZone) {
-                    positions.add(posKey); // Mark this position as taken (avoids NPC overlap too)
-                    
-                    // Assign different character types based on stage
-                    let type = 'npc1';
-                    if (s === 1) type = 'npc2';
-                    if (s === 2) type = 'npc3';
-
-                    this.npcs.push({
-                        x,
-                        y,
-                        stage: s,
-                        name: `Mentor Estágio ${s + 1}`,
-                        type: type
-                    });
-                    placed = true;
-                }
             }
 
             occupiedPositions.add(`${pos.x},${pos.y}`);
