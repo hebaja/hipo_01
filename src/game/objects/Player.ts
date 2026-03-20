@@ -26,7 +26,7 @@ export class Player {
         this.sprite.setOrigin(0.5, 0.5); // Center origin
         
         this.sprite.x = this.gridX * this.tileSize + this.tileSize / 2;
-        this.sprite.y = this.gridY * this.tileSize + this.tileSize / 2 - 10; // offset slightly up
+        this.sprite.y = this.gridY * this.tileSize + this.tileSize / 2;
         this.sprite.setDepth(100); // Ensure player is on top
 
         // Setup input
@@ -102,7 +102,7 @@ export class Player {
 
     private updatePosition() {
         const targetX = this.gridX * this.tileSize + this.tileSize / 2;
-        const targetY = this.gridY * this.tileSize + this.tileSize / 2 - 10;
+        const targetY = this.gridY * this.tileSize + this.tileSize / 2;
 
         this.isMoving = true;
         this.sprite.play(`walk-${this.facingDirection}`, true);

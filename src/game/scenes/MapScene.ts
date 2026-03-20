@@ -1,6 +1,7 @@
 import { Scene } from 'phaser';
 import { MapGrid, Building, NPC } from '../data/buildings';
 import { Player } from '../objects/Player';
+import { NPC as NPCObject } from '../objects/NPC';
 import { quizQuestions } from '../data/questions';
 import { getAnagramForCategory } from '../data/anagrams';
 import { PAINTER_FACTS } from '../data/twoTruthsOneLie';
@@ -8,12 +9,12 @@ import { memoryGameData } from '../data/memoryGame';
 import maleAdventurerPng from '../../assets/sprites/Male adventurer/Tilesheet/character_maleAdventurer_sheet.png';
 import maleAdventurerXml from '../../assets/sprites/Male adventurer/Tilesheet/character_maleAdventurer_sheet.xml?url';
 
-import femalePersonPng from '../../assets/sprites/Female person/Tilesheet/character_femalePerson_sheet.png';
-import femalePersonXml from '../../assets/sprites/Female person/Tilesheet/character_femalePerson_sheet.xml?url';
-import malePersonPng from '../../assets/sprites/Male person/Tilesheet/character_malePerson_sheet.png';
-import malePersonXml from '../../assets/sprites/Male person/Tilesheet/character_malePerson_sheet.xml?url';
-import robotPng from '../../assets/sprites/Robot/Tilesheet/character_robot_sheet.png';
-import robotXml from '../../assets/sprites/Robot/Tilesheet/character_robot_sheet.xml?url';
+import npc1Png from '../../assets/sprites/npc1.png';
+import npc1Json from '../../assets/sprites/npc1.json?url';
+import npc2Png from '../../assets/sprites/npc2.png';
+import npc2Json from '../../assets/sprites/npc2.json?url';
+import npc3Png from '../../assets/sprites/npc3.png';
+import npc3Json from '../../assets/sprites/npc3.json?url';
 
 // Player Spritesheet Assets
 import playerSpritesheetPng from '../../assets/sprites/player_spritesheet.png';
@@ -51,8 +52,7 @@ export class MapScene extends Scene {
     private questionNumberTexts: Phaser.GameObjects.Text[] = [];
     private currentExpansionStage: number = 0;
     private buildingsLayer: Phaser.Tilemaps.TilemapLayer | null = null;
-    private npcSprites: Map<string, Phaser.GameObjects.Sprite> = new Map();
-    private npcBalloons: Map<string, Phaser.GameObjects.Container> = new Map();
+    private npcObjects: Map<string, NPCObject> = new Map();
 
     //private TOTAL_EXPANSIONS = 6; // 6 stages: Initial + 5 expansions
     private TOTAL_EXPANSIONS = 3; // 3 stages: Initial + 2 expansions
@@ -73,9 +73,9 @@ export class MapScene extends Scene {
 
     preload() {
         this.load.atlasXML('maleAdventurer', maleAdventurerPng, maleAdventurerXml);
-        this.load.atlasXML('femalePerson', femalePersonPng, femalePersonXml);
-        this.load.atlasXML('malePerson', malePersonPng, malePersonXml);
-        this.load.atlasXML('robot', robotPng, robotXml);
+        this.load.atlas('npc1', npc1Png, npc1Json);
+        this.load.atlas('npc2', npc2Png, npc2Json);
+        this.load.atlas('npc3', npc3Png, npc3Json);
 
         // Load player spritesheet (contains both idle and walk frames)
         this.load.atlas('player', playerSpritesheetPng, playerSpritesheetJson);
@@ -187,20 +187,7 @@ export class MapScene extends Scene {
         this.cameras.main.startFollow(this.player.sprite, true, 0.1, 0.1);
         this.cameras.main.setZoom(1);
 
-        // Register NPC animations
-        const npcTypes = ['femalePerson', 'malePerson', 'robot'];
-        npcTypes.forEach(type => {
-            this.anims.create({
-                key: `${type}-idle`,
-                frames: [{ key: type, frame: 'idle' }],
-                frameRate: 10
-            });
-            this.anims.create({
-                key: `${type}-talk`,
-                frames: [{ key: type, frame: 'talk' }],
-                frameRate: 10
-            });
-        });
+
 
         // Create UI elements
         this.interactionText = this.add.text(10, 10, '', {
@@ -286,22 +273,21 @@ export class MapScene extends Scene {
 
         // Update NPC Balloons and animations
         this.mapGrid.npcs.forEach(npc => {
-            const sprite = this.npcSprites.get(npc.name);
-            const balloon = this.npcBalloons.get(npc.name);
-            if (!sprite || !balloon) return;
+            const npcObj = this.npcObjects.get(npc.name);
+            if (!npcObj) return;
 
             const dist = Phaser.Math.Distance.Between(playerPos.x, playerPos.y, npc.x, npc.y);
-            
+
             // Show balloon and play talk anim if close, otherwise idle
             // Also ensure the NPC is discovered first
             const isDiscovered = this.mapGrid.isTileDiscovered(npc.x, npc.y);
             if (dist <= 3 && isDiscovered) {
-                if (!balloon.visible) {
-                    balloon.setVisible(true);
-                    sprite.play(`${npc.type}-talk`);
+                if (!npcObj.balloon.visible) {
+                    npcObj.showBalloon();
+                    npcObj.showTalk();
                     // Floating effect for balloon
                     this.tweens.add({
-                        targets: balloon,
+                        targets: npcObj.balloon,
                         y: npc.y * this.tileSize - 20,
                         duration: 600,
                         yoyo: true,
@@ -310,10 +296,10 @@ export class MapScene extends Scene {
                     });
                 }
             } else {
-                balloon.setVisible(false);
-                sprite.play(`${npc.type}-idle`);
-                this.tweens.killTweensOf(balloon);
-                balloon.y = npc.y * this.tileSize - 10;
+                npcObj.hideBalloon();
+                npcObj.showIdle();
+                this.tweens.killTweensOf(npcObj.balloon);
+                npcObj.balloon.y = npc.y * this.tileSize - 10;
             }
         });
 
@@ -381,47 +367,20 @@ export class MapScene extends Scene {
             this.questionNumberTexts.push(numberText);
         });
 
-        // Update/Create NPC Sprites and Balloons
+        // Update/Create NPC Objects
         this.mapGrid.npcs.forEach(npc => {
             const isDiscovered = this.mapGrid.isTileDiscovered(npc.x, npc.y);
-            
-            let sprite = this.npcSprites.get(npc.name);
-            let balloon = this.npcBalloons.get(npc.name);
 
-            if (!sprite) {
-                // Create new sprite
-                sprite = this.add.sprite(
-                    npc.x * this.tileSize + this.tileSize / 2,
-                    npc.y * this.tileSize + this.tileSize / 2,
-                    npc.type,
-                    'idle'
-                );
-                sprite.setScale(this.tileSize / 128); // Standard character sheets are ~128px high
-                sprite.setDepth(15);
-                this.npcSprites.set(npc.name, sprite);
+            let npcObj = this.npcObjects.get(npc.name);
 
-                // Create Speech Balloon
-                balloon = this.add.container(
-                    npc.x * this.tileSize + this.tileSize / 2,
-                    npc.y * this.tileSize - 10
-                );
-                
-                const bg = this.add.image(0, 0, 'panel_beigeLight').setScale(0.25).setAlpha(0.9);
-                const dots = this.add.text(0, -5, '...', { 
-                    fontSize: '24px', 
-                    color: '#000000', 
-                    fontStyle: 'bold' 
-                }).setOrigin(0.5);
-                
-                balloon.add([bg, dots]);
-                balloon.setDepth(20);
-                balloon.setVisible(false);
-                this.npcBalloons.set(npc.name, balloon);
+            if (!npcObj) {
+                // Create new NPC object
+                npcObj = new NPCObject(this, npc.type, npc.name, npc.x, npc.y, this.tileSize);
+                this.npcObjects.set(npc.name, npcObj);
             }
 
             // Sync visibility with discovery
-            sprite.setVisible(isDiscovered);
-            // Balloon visibility is also handled in update() based on proximity
+            npcObj.setVisible(isDiscovered);
         });
     }
 

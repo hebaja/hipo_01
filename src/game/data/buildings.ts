@@ -242,9 +242,9 @@ export class MapGrid {
                     positions.add(posKey); // Mark this position as taken (avoids NPC overlap too)
                     
                     // Assign different character types based on stage
-                    let type = 'femalePerson';
-                    if (s === 1) type = 'malePerson';
-                    if (s === 2) type = 'robot';
+                    let type = 'npc1';
+                    if (s === 1) type = 'npc2';
+                    if (s === 2) type = 'npc3';
 
                     this.npcs.push({
                         x,
