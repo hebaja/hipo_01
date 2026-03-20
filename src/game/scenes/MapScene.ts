@@ -15,6 +15,10 @@ import malePersonXml from '../../assets/sprites/Male person/Tilesheet/character_
 import robotPng from '../../assets/sprites/Robot/Tilesheet/character_robot_sheet.png';
 import robotXml from '../../assets/sprites/Robot/Tilesheet/character_robot_sheet.xml?url';
 
+// Player Spritesheet Assets
+import playerSpritesheetPng from '../../assets/sprites/player_spritesheet.png';
+import playerSpritesheetJson from '../../assets/sprites/player_spritesheet.json?url';
+
 // UI Assets
 import panelBeigeLightPng from '../../assets/ui/PNG/panel_beigeLight.png';
 import panelBrownPng from '../../assets/ui/PNG/panel_brown.png';
@@ -72,6 +76,9 @@ export class MapScene extends Scene {
         this.load.atlasXML('femalePerson', femalePersonPng, femalePersonXml);
         this.load.atlasXML('malePerson', malePersonPng, malePersonXml);
         this.load.atlasXML('robot', robotPng, robotXml);
+
+        // Load player spritesheet (contains both idle and walk frames)
+        this.load.atlas('player', playerSpritesheetPng, playerSpritesheetJson);
 
         // Load UI Panel & Buttons
         this.load.image('panel_brown', panelBrownPng);
@@ -141,30 +148,36 @@ export class MapScene extends Scene {
         const startY = Math.floor(this.gridSize / 2);
         this.player = new Player(this, this.mapGrid, startX, startY);
 
-        // Register player animations
-        this.anims.create({
-            key: 'player-idle',
-            frames: [{ key: 'maleAdventurer', frame: 'idle' }],
-            frameRate: 10
+        // Register player directional animations
+        const directions = ['east', 'north', 'south', 'west'] as const;
+        directions.forEach(dir => {
+            this.anims.create({
+                key: `idle-${dir}`,
+                frames: [
+                    { key: 'player', frame: `idle_${dir}_000` },
+                    { key: 'player', frame: `idle_${dir}_001` },
+                    { key: 'player', frame: `idle_${dir}_002` },
+                    { key: 'player', frame: `idle_${dir}_003` },
+                ],
+                frameRate: 3,
+                repeat: -1
+            });
+            this.anims.create({
+                key: `walk-${dir}`,
+                frames: [
+                    { key: 'player', frame: `walk_${dir}_000` },
+                    { key: 'player', frame: `walk_${dir}_001` },
+                    { key: 'player', frame: `walk_${dir}_002` },
+                    { key: 'player', frame: `walk_${dir}_003` },
+                    { key: 'player', frame: `walk_${dir}_004` },
+                    { key: 'player', frame: `walk_${dir}_005` },
+                ],
+                frameRate: 8,
+                repeat: -1
+            });
         });
 
-        this.anims.create({
-            key: 'player-walk',
-            frames: [
-                { key: 'maleAdventurer', frame: 'walk0' },
-                { key: 'maleAdventurer', frame: 'walk1' },
-                { key: 'maleAdventurer', frame: 'walk2' },
-                { key: 'maleAdventurer', frame: 'walk3' },
-                { key: 'maleAdventurer', frame: 'walk4' },
-                { key: 'maleAdventurer', frame: 'walk5' },
-                { key: 'maleAdventurer', frame: 'walk6' },
-                { key: 'maleAdventurer', frame: 'walk7' }
-            ],
-            frameRate: 10,
-            repeat: -1
-        });
-
-        this.player.sprite.play('player-idle');
+        this.player.sprite.play('idle-south');
 
         // Initial map reveal (starting at 10, 10 for the 20x20 map)
         this.mapGrid.discoveryRadius = this.RADII[0];
