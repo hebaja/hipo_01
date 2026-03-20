@@ -63,7 +63,8 @@ export class TwoTruthsOneLieScene extends Scene {
         // Category label
         const categoryText = this.add.text(panelX, panelY - panelHeight/2 + 30, `[${this.building.category}]`, {
             fontSize: '16px',
-            color: '#ffff00'
+            color: '#ffff00',
+            shadow: { offsetX: 2, offsetY: 2, color: '#000000', blur: 4, fill: true }
         });
         categoryText.setOrigin(0.5);
         categoryText.setScrollFactor(0);
@@ -72,7 +73,8 @@ export class TwoTruthsOneLieScene extends Scene {
         const titleText = this.add.text(panelX, panelY - panelHeight/2 + 60, 'Duas Verdades e uma Mentira', {
             fontSize: '20px',
             color: '#ffffff',
-            fontStyle: 'bold'
+            fontStyle: 'bold',
+            shadow: { offsetX: 2, offsetY: 2, color: '#000000', blur: 4, fill: true }
         });
         titleText.setOrigin(0.5);
         titleText.setScrollFactor(0);
@@ -80,7 +82,8 @@ export class TwoTruthsOneLieScene extends Scene {
         // Instructions
         const instructionText = this.add.text(panelX, panelY - panelHeight/2 + 90, 'Encontre a MENTIRA sobre o pintor:', {
             fontSize: '14px',
-            color: '#aaaaaa'
+            color: '#aaaaaa',
+            shadow: { offsetX: 2, offsetY: 2, color: '#000000', blur: 4, fill: true }
         });
         instructionText.setOrigin(0.5);
         instructionText.setScrollFactor(0);
@@ -116,7 +119,8 @@ export class TwoTruthsOneLieScene extends Scene {
         const helpText = this.add.text(0, 0, '?', {
             fontSize: '20px',
             color: '#5c4033',
-            fontStyle: 'bold'
+            fontStyle: 'bold',
+            shadow: { offsetX: 2, offsetY: 2, color: '#000000', blur: 4, fill: true }
         }).setOrigin(0.5);
         helpButton.add([helpBg, helpText]);
         helpButton.setScrollFactor(0);
@@ -188,7 +192,8 @@ export class TwoTruthsOneLieScene extends Scene {
                 color: '#5c4033',
                 fontStyle: 'bold',
                 wordWrap: { width: buttonWidth - 20, useAdvancedWrap: true },
-                align: 'center'
+                align: 'center',
+                shadow: { offsetX: 2, offsetY: 2, color: '#000000', blur: 4, fill: true }
             });
             buttonText.setOrigin(0.5);
             buttonText.setScrollFactor(0);
@@ -215,7 +220,8 @@ export class TwoTruthsOneLieScene extends Scene {
             fontSize: '14px',
             color: '#ffff00',
             align: 'center',
-            wordWrap: { width: panelWidth - 40 }
+            wordWrap: { width: panelWidth - 40 },
+            shadow: { offsetX: 2, offsetY: 2, color: '#000000', blur: 4, fill: true }
         });
         this.clueText.setOrigin(0.5);
         this.clueText.setScrollFactor(0);
@@ -225,7 +231,8 @@ export class TwoTruthsOneLieScene extends Scene {
         this.resultText = this.add.text(panelX, panelY + 170, "", {
             fontSize: '24px',
             color: '#00ff00',
-            fontStyle: 'bold'
+            fontStyle: 'bold',
+            shadow: { offsetX: 2, offsetY: 2, color: '#000000', blur: 4, fill: true }
         });
         this.resultText.setOrigin(0.5);
         this.resultText.setScrollFactor(0);

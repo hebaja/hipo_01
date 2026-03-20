@@ -46,8 +46,6 @@ export class MapScene extends Scene {
     private interactionText: any;
     private scoreText: any;
     private score: number = 0;
-    private isTutorialActive: boolean = true;
-    private tutorialContainer: Phaser.GameObjects.Container | null = null;
     private questionNumberTexts: Phaser.GameObjects.Text[] = [];
     private currentExpansionStage: number = 0;
     private buildingsLayer: Phaser.Tilemaps.TilemapLayer | null = null;
@@ -96,6 +94,10 @@ export class MapScene extends Scene {
         // Load Tilemap
         this.load.image('city-tileset', cityTilesetPng);
         this.load.tilemapTiledJSON('city-map', cityMapJson);
+
+        // Load Custom Fonts
+        this.load.font('kenneyPixel', 'assets/fonts/Kenney Pixel.ttf');
+        this.load.font('kenneyPixelSquare', 'assets/fonts/Kenney Pixel Square.ttf');
     }
 
     create() {
@@ -204,19 +206,31 @@ export class MapScene extends Scene {
 
         // Create UI elements
         this.interactionText = this.add.text(10, 10, '', {
+            fontFamily: 'Kenney Pixel',
             fontSize: '18px',
             color: '#ffffff',
-            backgroundColor: '#000000',
-            padding: { x: 10, y: 5 }
+            shadow: {
+                offsetX: 2,
+                offsetY: 2,
+                color: '#000000',
+                blur: 4,
+                fill: true
+            }
         });
         this.interactionText.setScrollFactor(0);
         this.interactionText.setDepth(1000);
 
         this.scoreText = this.add.text(10, 50, 'Score: 0', {
+            fontFamily: 'Kenney Pixel',
             fontSize: '18px',
             color: '#ffffff',
-            backgroundColor: '#000000',
-            padding: { x: 10, y: 5 }
+            shadow: {
+                offsetX: 2,
+                offsetY: 2,
+                color: '#000000',
+                blur: 4,
+                fill: true
+            }
         });
         this.scoreText.setScrollFactor(0);
         this.scoreText.setDepth(1000);
@@ -232,8 +246,6 @@ export class MapScene extends Scene {
 
         // Click-to-move handler
         this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-            if (this.isTutorialActive) return;
-
             // Convert click world position to grid coordinates
             const gridX = Math.floor(pointer.worldX / this.tileSize);
             const gridY = Math.floor(pointer.worldY / this.tileSize);
@@ -252,14 +264,9 @@ export class MapScene extends Scene {
                 this.player.setPath(path);
             }
         });
-
-        // Show tutorial
-        this.showTutorial();
     }
 
     update() {
-        if (this.isTutorialActive) return;
-
         // Update player
         this.player.update(this.mapGrid);
 
@@ -573,9 +580,10 @@ export class MapScene extends Scene {
                 this.cameras.main.midPoint.y - 100,
                 'Prédio conquistado! +100',
                 {
+                    fontFamily: 'Kenney Pixel',
                     fontSize: '24px',
                     color: '#00ff00',
-                    backgroundColor: '#000000'
+                    shadow: { offsetX: 2, offsetY: 2, color: '#000000', blur: 4, fill: true }
                 }
             );
             msg.setOrigin(0.5);
@@ -589,9 +597,10 @@ export class MapScene extends Scene {
                 this.cameras.main.midPoint.y - 100,
                 'Errado! Tente novamente.',
                 {
+                    fontFamily: 'Kenney Pixel',
                     fontSize: '24px',
                     color: '#ff0000',
-                    backgroundColor: '#000000'
+                    shadow: { offsetX: 2, offsetY: 2, color: '#000000', blur: 4, fill: true }
                 }
             );
             msg.setOrigin(0.5);
@@ -602,7 +611,7 @@ export class MapScene extends Scene {
             // Track this as the most recently failed building globally and per-stage
             this.mapGrid.lastFailedBuilding = building;
             this.mapGrid.lastFailedBuildingByStage[building.stage] = building;
-            console.log(`[HINT] Most recent error recorded: ${building.category} at (${building.x}, ${building.y})`);
+            console.log(`[HINT] Wrong answer recorded: ${building.category} at stage ${building.stage} (${building.x}, ${building.y})`);
         }
         // If success is null, do nothing just resume
 
@@ -614,30 +623,30 @@ export class MapScene extends Scene {
         // Find the best building to give a hint for
         let buildingWithError: Building | null = null;
 
-        // 1. Highest priority: The global most recent error (if it's in this NPC's stage)
-        const globalRecent = this.mapGrid.lastFailedBuilding;
-        if (globalRecent && globalRecent.stage === npc.stage && !globalRecent.conquered) {
-            buildingWithError = globalRecent;
-        }
+        // Find buildings in this NPC's stage that have wrong attempts
+        const npcStage = npc.stage;
+        console.log(`[NPC HINT] NPC: ${npc.name} (stage ${npcStage})`);
 
-        // 2. Second priority: The most recent error specifically for this stage
-        if (!buildingWithError) {
-            const stageRecent = this.mapGrid.lastFailedBuildingByStage[npc.stage];
-            if (stageRecent && !stageRecent.conquered) {
-                buildingWithError = stageRecent;
-            }
-        }
+        // Find all buildings and their stages
+        console.log(`[NPC HINT] All buildings with stages:`);
+        this.mapGrid.grid.forEach(b => {
+            console.log(`  - ${b.category}: stage=${b.stage}, wrongAttempts=${b.wrongAttempts}, conquered=${b.conquered}`);
+        });
 
-        // 3. Last fallback: Find ANY building with errors in this stage
+        // Find buildings in this NPC's stage
+        const stageBuildings = this.mapGrid.grid.filter(b => b.stage === npcStage);
+        console.log(`[NPC HINT] Buildings in stage ${npcStage}: ${stageBuildings.length}`);
+
+        // Find a building with wrong attempts in this stage
+        buildingWithError = stageBuildings.find(b => b.wrongAttempts > 0 && !b.conquered) || null;
+
+        // If no building found in this stage, find any building with errors
         if (!buildingWithError) {
-            buildingWithError = this.mapGrid.grid.find(b =>
-                b.stage === npc.stage &&
-                b.wrongAttempts > 0 &&
-                !b.conquered
-            ) || null;
+            buildingWithError = this.mapGrid.grid.find(b => b.wrongAttempts > 0 && !b.conquered) || null;
         }
 
         let message = '';
+        console.log(`[NPC HINT] Final buildingWithError: ${buildingWithError ? buildingWithError.category : 'null'}`);
         if (buildingWithError) {
             if (buildingWithError.challengeType === 'anagram') {
                 const anagram = getAnagramForCategory(buildingWithError.category);
@@ -687,12 +696,14 @@ export class MapScene extends Scene {
         ).setScrollFactor(0).setDepth(2000);
 
         const text = this.add.text(0, 0, message, {
+            fontFamily: 'Kenney Pixel',
             fontSize: '18px',
             color: '#ffffff',
             backgroundColor: '#000000',
             padding: { x: 15, y: 10 },
             wordWrap: { width: 350 },
-            align: 'center'
+            align: 'center',
+            shadow: { offsetX: 2, offsetY: 2, color: '#000000', blur: 4, fill: true }
         }).setOrigin(0.5);
 
         hintBox.add(text);
@@ -718,74 +729,6 @@ export class MapScene extends Scene {
                 });
             } else {
                 hintBox.destroy();
-            }
-        });
-    }
-
-    private showTutorial() {
-        const { width, height } = this.cameras.main;
-
-        // Create a container for tutorial elements
-        this.tutorialContainer = this.add.container(0, 0);
-        this.tutorialContainer.setDepth(2000);
-        this.tutorialContainer.setScrollFactor(0);
-
-        // Background overlay
-        const bg = this.add.graphics();
-        bg.fillStyle(0x000000, 0.8);
-        bg.fillRect(0, 0, width, height);
-        this.tutorialContainer.add(bg);
-
-        // Tutorial Box using NineSlice
-        const boxWidth = 500;
-        const boxHeight = 400;
-
-        // panel_brown.png is typically 100x100 with corners taking roughly 30px
-        const box = this.add.nineslice(
-            width / 2,
-            height / 2,
-            'panel_brown',
-            0, // frame
-            boxWidth,
-            boxHeight,
-            32, 32, 32, 32 // Left, Right, Top, Bottom margins
-        );
-        this.tutorialContainer.add(box);
-
-        // Title
-        const title = this.add.text(width / 2, (height - boxHeight) / 2 + 50, 'Como Jogar', {
-            fontSize: '32px',
-            color: '#ffffff',
-            fontStyle: 'bold'
-        }).setOrigin(0.5);
-        this.tutorialContainer.add(title);
-
-        // Instructions
-        const instructions = [
-            '• Use as setas ou WASD para se mover.',
-            '• Clique em um tile para andar até lá.',
-            '• Explore o mapa para encontrar prédios.',
-            '• Chegue perto de um prédio e aperte ESPAÇO.',
-            '• Responda corretamente para conquistar o prédio.',
-            '• Conquistar prédios revela mais partes do mapa!',
-            '',
-            'Clique em qualquer lugar para começar!'
-        ];
-
-        const content = this.add.text(width / 2, height / 2 + 20, instructions.join('\n'), {
-            fontSize: '20px',
-            color: '#ffffff',
-            align: 'center',
-            wordWrap: { width: boxWidth - 60 }
-        }).setOrigin(0.5);
-        this.tutorialContainer.add(content);
-
-        // Interaction to close tutorial
-        this.input.once('pointerdown', () => {
-            if (this.tutorialContainer) {
-                this.tutorialContainer.destroy();
-                this.tutorialContainer = null;
-                this.isTutorialActive = false;
             }
         });
     }
