@@ -78,7 +78,8 @@ export class AnagramScene extends Scene {
         // Category label (matching QuizScene style)
         const categoryText = this.add.text(panelX, panelY - panelHeight/2 + 30, `[${this.building.category}]`, {
             fontSize: '16px',
-            color: '#ffff00'
+            color: '#ffff00',
+            shadow: { offsetX: 2, offsetY: 2, color: '#000000', blur: 4, fill: true }
         });
         categoryText.setOrigin(0.5);
         categoryText.setScrollFactor(0);
@@ -87,7 +88,8 @@ export class AnagramScene extends Scene {
         const titleText = this.add.text(panelX, panelY - panelHeight/2 + 60, 'Anagrama', {
             fontSize: '20px',
             color: '#ffffff',
-            fontStyle: 'bold'
+            fontStyle: 'bold',
+            shadow: { offsetX: 2, offsetY: 2, color: '#000000', blur: 4, fill: true }
         });
         titleText.setOrigin(0.5);
         titleText.setScrollFactor(0);
@@ -95,7 +97,8 @@ export class AnagramScene extends Scene {
         // Instructions
         const instructionText = this.add.text(panelX, panelY - panelHeight/2 + 90, 'Arraste as letras para formar a palavra', {
             fontSize: '14px',
-            color: '#aaaaaa'
+            color: '#aaaaaa',
+            shadow: { offsetX: 2, offsetY: 2, color: '#000000', blur: 4, fill: true }
         });
         instructionText.setOrigin(0.5);
         instructionText.setScrollFactor(0);
@@ -105,7 +108,8 @@ export class AnagramScene extends Scene {
             fontSize: '14px',
             color: '#aaaaaa',
             align: 'center',
-            wordWrap: { width: panelWidth - 40 }
+            wordWrap: { width: panelWidth - 40 },
+            shadow: { offsetX: 2, offsetY: 2, color: '#000000', blur: 4, fill: true }
         });
         genericHintText.setOrigin(0.5);
         genericHintText.setScrollFactor(0);
@@ -246,7 +250,8 @@ export class AnagramScene extends Scene {
         const helpText = this.add.text(0, 0, '?', {
             fontSize: '20px',
             color: '#5c4033',
-            fontStyle: 'bold'
+            fontStyle: 'bold',
+            shadow: { offsetX: 2, offsetY: 2, color: '#000000', blur: 4, fill: true }
         }).setOrigin(0.5);
         helpButton.add([helpBg, helpText]);
         helpButton.setScrollFactor(0);
@@ -627,7 +632,8 @@ export class AnagramScene extends Scene {
                 fontSize: '14px',
                 color: '#ffff00',
                 align: 'center',
-                wordWrap: { width: 460 }
+                wordWrap: { width: 460 },
+                shadow: { offsetX: 2, offsetY: 2, color: '#000000', blur: 4, fill: true }
             }
         );
         hintText.setOrigin(0.5);
@@ -652,7 +658,8 @@ export class AnagramScene extends Scene {
             message,
             {
                 fontSize: '16px',
-                color: color
+                color: color,
+                shadow: { offsetX: 2, offsetY: 2, color: '#000000', blur: 4, fill: true }
             }
         )
             .setOrigin(0.5)
@@ -701,7 +708,8 @@ export class AnagramScene extends Scene {
             '✓ Correto!',
             {
                 fontSize: '20px',
-                color: '#00ff00'
+                color: '#00ff00',
+                shadow: { offsetX: 2, offsetY: 2, color: '#000000', blur: 4, fill: true }
             }
         );
         resultText.setOrigin(0.5);

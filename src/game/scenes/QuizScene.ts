@@ -41,7 +41,7 @@ export class QuizScene extends Scene {
 
         // Quiz panel background (using NineSlice instead of Rectangle)
         const panelWidth = 500;
-        const panelHeight = 300;
+        const panelHeight = 400;
         const panelX = this.cameras.main.width / 2;
         const panelY = this.cameras.main.height / 2;
 
@@ -58,18 +58,22 @@ export class QuizScene extends Scene {
 
         // Question text
         const questionText = this.add.text(panelX, panelY - 80, this.question.question, {
+            fontFamily: 'Kenney Pixel',
             fontSize: '20px',
             color: '#ffffff',
             wordWrap: { width: panelWidth - 40 },
-            align: 'center'
+            align: 'center',
+            shadow: { offsetX: 2, offsetY: 2, color: '#000000', blur: 4, fill: true }
         });
         questionText.setOrigin(0.5);
         questionText.setScrollFactor(0);
 
         // Category label
         const categoryText = this.add.text(panelX, panelY - 120, `[${this.building.category}]`, {
+            fontFamily: 'Kenney Pixel',
             fontSize: '16px',
-            color: '#ffff00'
+            color: '#ffff00',
+            shadow: { offsetX: 2, offsetY: 2, color: '#000000', blur: 4, fill: true }
         });
         categoryText.setOrigin(0.5);
         categoryText.setScrollFactor(0);
@@ -131,8 +135,9 @@ export class QuizScene extends Scene {
             button.setInteractive({ cursor: `url(${cursorHandPng}), pointer` });
             
             const buttonText = this.add.text(panelX, buttonY, option, {
+                fontFamily: 'Kenney Pixel',
                 fontSize: '18px',
-                color: '#5c4033', // Dark brown to contrast with beige
+                color: '#5c4033',
                 fontStyle: 'bold'
             });
             buttonText.setOrigin(0.5);
@@ -162,9 +167,11 @@ export class QuizScene extends Scene {
         const helpButton = this.add.container(panelX - panelWidth / 2 + 24, panelY - panelHeight / 2 + 24);
         const helpBg = this.add.image(0, 0, 'buttonSquare_beige').setScale(0.8);
         const helpText = this.add.text(0, 0, '?', {
+            fontFamily: 'Kenney Pixel',
             fontSize: '20px',
             color: '#5c4033',
-            fontStyle: 'bold'
+            fontStyle: 'bold',
+            shadow: { offsetX: 2, offsetY: 2, color: '#000000', blur: 4, fill: true }
         }).setOrigin(0.5);
         helpButton.add([helpBg, helpText]);
         helpButton.setScrollFactor(0);
@@ -178,7 +185,8 @@ export class QuizScene extends Scene {
             helpBg.setTexture('buttonSquare_beige');
         });
         helpButton.on('pointerdown', () => {
-            const tooltip = this.add.text(panelX, panelY + 130, 'DICA: Se tiver dúvidas, procure o NPC Mentor\nda região no mapa para receber uma pista!', {
+            const tooltip = this.add.text(panelX, panelY + panelHeight / 2 - 30, 'DICA: Se tiver dúvidas, procure o NPC Mentor\nda região no mapa para receber uma pista!', {
+                fontFamily: 'Kenney Pixel',
                 fontSize: '14px',
                 color: '#ffff00',
                 backgroundColor: '#000000aa',
@@ -190,9 +198,11 @@ export class QuizScene extends Scene {
         });
 
         // Instructions text
-        const instructionText = this.add.text(panelX, panelY + 130, 'Clique em um opção para responder', {
+        const instructionText = this.add.text(panelX, panelY + panelHeight / 2 - 30, 'Clique em um opção para responder', {
+            fontFamily: 'Kenney Pixel',
             fontSize: '14px',
-            color: '#aaaaaa'
+            color: '#aaaaaa',
+            shadow: { offsetX: 2, offsetY: 2, color: '#000000', blur: 4, fill: true }
         });
         instructionText.setOrigin(0.5);
         instructionText.setScrollFactor(0);
@@ -248,8 +258,10 @@ export class QuizScene extends Scene {
                 this.cameras.main.height / 2 + 130,
                 '✓ Correct!',
                 {
-                    fontSize: '20px',
-                    color: '#00ff00'
+                    fontFamily: 'Kenney Pixel',
+                    fontSize: '24px',
+                    color: '#00ff00',
+                    shadow: { offsetX: 2, offsetY: 2, color: '#000000', blur: 4, fill: true }
                 }
             );
             resultText.setOrigin(0.5);
@@ -266,6 +278,7 @@ export class QuizScene extends Scene {
         } else {
             // Wrong answer: Increment wrong attempts counter
             this.building.wrongAttempts++;
+            console.log(`[QUIZ] Wrong answer! ${this.building.category} wrongAttempts now: ${this.building.wrongAttempts}`);
             
             // Highlight the selected wrong option in red
             const selectedButtonData = this.optionButtons.find(btn => btn.index === selectedIndex);
