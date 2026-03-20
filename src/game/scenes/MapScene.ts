@@ -230,6 +230,29 @@ export class MapScene extends Scene {
         // Register interaction key for NPC (in addition to buildings)
         // Note: player.isInteracting already handles Space
 
+        // Click-to-move handler
+        this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+            if (this.isTutorialActive) return;
+
+            // Convert click world position to grid coordinates
+            const gridX = Math.floor(pointer.worldX / this.tileSize);
+            const gridY = Math.floor(pointer.worldY / this.tileSize);
+
+            // Ignore clicks on current player position
+            const playerPos = this.player.getPosition();
+            if (gridX === playerPos.x && gridY === playerPos.y) return;
+
+            // Ignore clicks on blocked/undiscovered tiles
+            if (!this.mapGrid.isTileDiscovered(gridX, gridY)) return;
+            if (!this.mapGrid.isWalkable(gridX, gridY)) return;
+
+            // Find path and set it
+            const path = this.findPath(playerPos.x, playerPos.y, gridX, gridY);
+            if (path.length > 0) {
+                this.player.setPath(path);
+            }
+        });
+
         // Show tutorial
         this.showTutorial();
     }
@@ -740,6 +763,7 @@ export class MapScene extends Scene {
         // Instructions
         const instructions = [
             '• Use as setas ou WASD para se mover.',
+            '• Clique em um tile para andar até lá.',
             '• Explore o mapa para encontrar prédios.',
             '• Chegue perto de um prédio e aperte ESPAÇO.',
             '• Responda corretamente para conquistar o prédio.',
@@ -764,5 +788,52 @@ export class MapScene extends Scene {
                 this.isTutorialActive = false;
             }
         });
+    }
+
+    private findPath(startX: number, startY: number, endX: number, endY: number): { x: number; y: number }[] {
+        const { width, height } = this.mapGrid;
+        const visited: boolean[][] = Array(width).fill(null).map(() => Array(height).fill(false));
+        const cameFrom: ({ x: number; y: number } | null)[][] = Array(width).fill(null).map(() => Array(height).fill(null));
+
+        const queue: { x: number; y: number }[] = [{ x: startX, y: startY }];
+        visited[startX][startY] = true;
+
+        const dirs = [
+            { dx: 0, dy: -1 },
+            { dx: 1, dy: 0 },
+            { dx: 0, dy: 1 },
+            { dx: -1, dy: 0 },
+        ];
+
+        while (queue.length > 0) {
+            const current = queue.shift()!;
+
+            if (current.x === endX && current.y === endY) {
+                // Reconstruct path (exclude start)
+                const path: { x: number; y: number }[] = [];
+                let node: { x: number; y: number } | null = { x: endX, y: endY };
+                while (node && (node.x !== startX || node.y !== startY)) {
+                    path.unshift({ x: node.x, y: node.y });
+                    node = cameFrom[node.x][node.y];
+                }
+                return path;
+            }
+
+            for (const { dx, dy } of dirs) {
+                const nx = current.x + dx;
+                const ny = current.y + dy;
+
+                if (nx < 0 || nx >= width || ny < 0 || ny >= height) continue;
+                if (visited[nx][ny]) continue;
+                if (!this.mapGrid.isTileDiscovered(nx, ny)) continue;
+                if (!this.mapGrid.isWalkable(nx, ny)) continue;
+
+                visited[nx][ny] = true;
+                cameFrom[nx][ny] = { x: current.x, y: current.y };
+                queue.push({ x: nx, y: ny });
+            }
+        }
+
+        return [];
     }
 }
