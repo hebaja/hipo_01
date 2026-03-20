@@ -207,55 +207,57 @@ export class MapGrid {
         }
     }
 
+    private readonly NPC_POSITIONS: { x: number; y: number }[] = [
+        { x: 11, y: 10 },
+        { x: 13, y: 8 },
+        { x: 5, y: 10 },
+    ];
+
     public generateNPCs(stages: number, radii: number[]) {
-        this.npcs = []; // Clear existing NPCs to prevent duplicates
-        const positions = new Set<string>();
-        // Add building positions to avoid them
-        this.grid.forEach(b => positions.add(`${b.x},${b.y}`));
+        this.npcs = [];
+        const occupiedPositions = new Set<string>();
+        this.grid.forEach(b => occupiedPositions.add(`${b.x},${b.y}`));
+
+        console.log(`[NPC] Generating NPCs for ${stages} stages`);
+        console.log(`[NPC] Buildings in grid: ${this.grid.length}`);
+        
+        const stageCount: { [stage: number]: number } = {};
+        this.grid.forEach(b => {
+            stageCount[b.stage] = (stageCount[b.stage] || 0) + 1;
+        });
+        console.log(`[NPC] Buildings per stage:`, stageCount);
+        console.log(`[NPC] RADII used for NPC positioning:`, radii);
 
         const centerX = Math.floor(this.width / 2);
         const centerY = Math.floor(this.height / 2);
 
-        for (let s = 0; s < stages; s++) {
+        for (let s = 0; s < stages && s < this.NPC_POSITIONS.length; s++) {
+            const pos = this.NPC_POSITIONS[s];
             const innerRadius = s === 0 ? 0 : radii[s - 1];
             const outerRadius = radii[s];
+            const distance = Math.sqrt(Math.pow(pos.x - centerX, 2) + Math.pow(pos.y - centerY, 2));
 
-            let placed = false;
-            let attempts = 0;
-            while (!placed && attempts < 200) {
-                attempts++;
-                const x = Math.floor(Math.random() * this.width);
-                const y = Math.floor(Math.random() * this.height);
-                const posKey = `${x},${y}`;
+            const isBlocked = occupiedPositions.has(`${pos.x},${pos.y}`) || this.collisionGrid[pos.x]?.[pos.y];
+            const isOutOfZone = distance < innerRadius || distance >= outerRadius;
 
-                if (positions.has(posKey)) continue;
-                if (this.collisionGrid[x][y]) continue; // Avoid obstacles!
-
-                const distance = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
-                
-                // Use slightly more exclusive boundaries to prevent overlap between stages
-                const isWithinZone = s === 0 
-                    ? distance < outerRadius 
-                    : distance >= innerRadius && distance < outerRadius;
-
-                if (isWithinZone) {
-                    positions.add(posKey); // Mark this position as taken (avoids NPC overlap too)
-                    
-                    // Assign different character types based on stage
-                    let type = 'npc1';
-                    if (s === 1) type = 'npc2';
-                    if (s === 2) type = 'npc3';
-
-                    this.npcs.push({
-                        x,
-                        y,
-                        stage: s,
-                        name: `Mentor Estágio ${s + 1}`,
-                        type: type
-                    });
-                    placed = true;
-                }
+            if (isBlocked || isOutOfZone) {
+                console.error(`NPC for stage ${s} at (${pos.x}, ${pos.y}) is ${isBlocked ? 'BLOCKED' : 'OUT OF ZONE'}`);
+                continue;
             }
+
+            occupiedPositions.add(`${pos.x},${pos.y}`);
+            let type = 'npc1';
+            if (s === 1) type = 'npc2';
+            if (s === 2) type = 'npc3';
+
+            console.log(`[NPC] Created NPC for stage ${s + 1}: ${pos.x}, ${pos.y} (type: ${type}) distance from center: ${distance.toFixed(2)}`);
+            this.npcs.push({
+                x: pos.x,
+                y: pos.y,
+                stage: s,
+                name: `Mentor Estágio ${s + 1}`,
+                type: type,
+            });
         }
     }
 }

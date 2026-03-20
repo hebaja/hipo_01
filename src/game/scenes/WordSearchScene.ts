@@ -90,7 +90,8 @@ export class WordSearchScene extends Scene {
         // Category label
         const categoryText = this.add.text(panelX, panelY - panelHeight/2 + 30, `[${this.building.category}]`, {
             fontSize: '16px',
-            color: '#ffff00'
+            color: '#ffff00',
+            shadow: { offsetX: 2, offsetY: 2, color: '#000000', blur: 4, fill: true }
         });
         categoryText.setOrigin(0.5);
         categoryText.setScrollFactor(0);
@@ -99,7 +100,8 @@ export class WordSearchScene extends Scene {
         const titleText = this.add.text(panelX, panelY - panelHeight/2 + 60, 'Caça-Palavras', {
             fontSize: '20px',
             color: '#ffffff',
-            fontStyle: 'bold'
+            fontStyle: 'bold',
+            shadow: { offsetX: 2, offsetY: 2, color: '#000000', blur: 4, fill: true }
         });
         titleText.setOrigin(0.5);
         titleText.setScrollFactor(0);
@@ -107,7 +109,8 @@ export class WordSearchScene extends Scene {
         // Instructions
         const instructionText = this.add.text(panelX, panelY - panelHeight/2 + 90, 'Encontre as palavras da lista', {
             fontSize: '14px',
-            color: '#aaaaaa'
+            color: '#aaaaaa',
+            shadow: { offsetX: 2, offsetY: 2, color: '#000000', blur: 4, fill: true }
         });
         instructionText.setOrigin(0.5);
         instructionText.setScrollFactor(0);
@@ -181,7 +184,8 @@ export class WordSearchScene extends Scene {
         const helpText = this.add.text(0, 0, '?', {
             fontSize: '20px',
             color: '#5c4033',
-            fontStyle: 'bold'
+            fontStyle: 'bold',
+            shadow: { offsetX: 2, offsetY: 2, color: '#000000', blur: 4, fill: true }
         }).setOrigin(0.5);
         helpButton.add([helpBg, helpText]);
         helpButton.setScrollFactor(0);
@@ -570,7 +574,8 @@ export class WordSearchScene extends Scene {
             {
                 fontSize: '20px',
                 color: '#00ff00',
-                fontStyle: 'bold'
+                fontStyle: 'bold',
+                shadow: { offsetX: 2, offsetY: 2, color: '#000000', blur: 4, fill: true }
             }
         );
         winText.setOrigin(0.5);

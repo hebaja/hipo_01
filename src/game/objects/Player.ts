@@ -5,18 +5,22 @@ export class Player {
     public sprite: GameObjects.Sprite;
     public gridX: number;
     public gridY: number;
+    private scene: Scene;
     private tileSize: number;
     private cursors: Phaser.Types.Input.Keyboard.CursorKeys;
     private keys: any;
     private facingDirection: string = 'south';
     private isMoving: boolean = false;
     private movePath: { x: number; y: number }[] = [];
+    private moveDelay: number = 150;
+    private lastMoveTime: number = 0;
+    private moveDirection: string | null = null;
 
     constructor(scene: Scene, mapGrid: MapGrid, startX: number = 10, startY: number = 10) {
+        this.scene = scene;
         this.tileSize = mapGrid.tileSize;
         this.gridX = startX;
         this.gridY = startY;
-        this.tileSize = mapGrid.tileSize;
 
         // Create player sprite from custom spritesheet
         this.sprite = scene.add.sprite(0, 0, 'player', 'idle_south_000');
@@ -43,35 +47,48 @@ export class Player {
     public update(mapGrid: MapGrid) {
         if (this.isMoving) return;
 
-        let moved = false;
+        const now = this.scene.time.now;
         let newX = this.gridX;
         let newY = this.gridY;
+        let moved = false;
+        let currentDirection: string | null = null;
 
-        // Check keyboard movement — takes priority over path
-        if (Phaser.Input.Keyboard.JustDown(this.cursors.left!) || Phaser.Input.Keyboard.JustDown(this.keys.A)) {
-            newX--;
-            moved = true;
-            this.facingDirection = 'west';
-        } else if (Phaser.Input.Keyboard.JustDown(this.cursors.right!) || Phaser.Input.Keyboard.JustDown(this.keys.D)) {
-            newX++;
-            moved = true;
-            this.facingDirection = 'east';
-        } else if (Phaser.Input.Keyboard.JustDown(this.cursors.up!) || Phaser.Input.Keyboard.JustDown(this.keys.W)) {
-            newY--;
-            moved = true;
-            this.facingDirection = 'north';
-        } else if (Phaser.Input.Keyboard.JustDown(this.cursors.down!) || Phaser.Input.Keyboard.JustDown(this.keys.S)) {
-            newY++;
-            moved = true;
-            this.facingDirection = 'south';
+        if (this.cursors.left.isDown || this.keys.A.isDown) {
+            currentDirection = 'west';
+        } else if (this.cursors.right.isDown || this.keys.D.isDown) {
+            currentDirection = 'east';
+        } else if (this.cursors.up.isDown || this.keys.W.isDown) {
+            currentDirection = 'north';
+        } else if (this.cursors.down.isDown || this.keys.S.isDown) {
+            currentDirection = 'south';
         }
 
-        // If keyboard input happened, cancel queued path
+        if (currentDirection) {
+            const isNewPress = this.moveDirection === null || currentDirection !== this.moveDirection;
+            
+            if (isNewPress) {
+                this.moveDirection = currentDirection;
+                this.lastMoveTime = now - this.moveDelay;
+            }
+
+            if (now - this.lastMoveTime >= this.moveDelay) {
+                this.lastMoveTime = now;
+                moved = true;
+                this.facingDirection = currentDirection;
+
+                if (currentDirection === 'west') newX--;
+                else if (currentDirection === 'east') newX++;
+                else if (currentDirection === 'north') newY--;
+                else if (currentDirection === 'south') newY++;
+            }
+        } else {
+            this.moveDirection = null;
+        }
+
         if (moved) {
             this.movePath = [];
         }
 
-        // If no keyboard input, follow queued path
         if (!moved && this.movePath.length > 0) {
             const next = this.movePath[0];
             if (mapGrid.isTileDiscovered(next.x, next.y) && mapGrid.isWalkable(next.x, next.y)) {
@@ -85,12 +102,10 @@ export class Player {
                 moved = true;
                 this.movePath.shift();
             } else {
-                // Path blocked — clear it
                 this.movePath = [];
             }
         }
 
-        // Bounds checking and discovery checking
         if (newX >= 0 && newX < mapGrid.width && newY >= 0 && newY < mapGrid.height) {
             if (moved && mapGrid.isTileDiscovered(newX, newY) && mapGrid.isWalkable(newX, newY)) {
                 this.gridX = newX;
