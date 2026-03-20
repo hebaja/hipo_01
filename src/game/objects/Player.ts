@@ -10,6 +10,7 @@ export class Player {
     private keys: any;
     private facingDirection: string = 'south';
     private isMoving: boolean = false;
+    private movePath: { x: number; y: number }[] = [];
 
     constructor(scene: Scene, mapGrid: MapGrid, startX: number = 10, startY: number = 10) {
         this.tileSize = mapGrid.tileSize;
@@ -46,7 +47,7 @@ export class Player {
         let newX = this.gridX;
         let newY = this.gridY;
 
-        // Check movement
+        // Check keyboard movement — takes priority over path
         if (Phaser.Input.Keyboard.JustDown(this.cursors.left!) || Phaser.Input.Keyboard.JustDown(this.keys.A)) {
             newX--;
             moved = true;
@@ -63,6 +64,30 @@ export class Player {
             newY++;
             moved = true;
             this.facingDirection = 'south';
+        }
+
+        // If keyboard input happened, cancel queued path
+        if (moved) {
+            this.movePath = [];
+        }
+
+        // If no keyboard input, follow queued path
+        if (!moved && this.movePath.length > 0) {
+            const next = this.movePath[0];
+            if (mapGrid.isTileDiscovered(next.x, next.y) && mapGrid.isWalkable(next.x, next.y)) {
+                if (next.x < this.gridX) this.facingDirection = 'west';
+                else if (next.x > this.gridX) this.facingDirection = 'east';
+                else if (next.y < this.gridY) this.facingDirection = 'north';
+                else if (next.y > this.gridY) this.facingDirection = 'south';
+
+                newX = next.x;
+                newY = next.y;
+                moved = true;
+                this.movePath.shift();
+            } else {
+                // Path blocked — clear it
+                this.movePath = [];
+            }
         }
 
         // Bounds checking and discovery checking
@@ -97,6 +122,14 @@ export class Player {
 
     public getPosition(): { x: number, y: number } {
         return { x: this.gridX, y: this.gridY };
+    }
+
+    public setPath(path: { x: number; y: number }[]) {
+        this.movePath = path;
+    }
+
+    public cancelPath() {
+        this.movePath = [];
     }
 
     public isInteracting(): boolean {
