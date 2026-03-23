@@ -135,6 +135,7 @@ repleta de descobertas artísticas!`;
         if (this.sound.get('click')) {
             this.sound.play('click', { volume: 0.3 });
         }
+        this.scale.startFullscreen();
         this.scene.start('MapScene');
     }
 }

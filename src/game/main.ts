@@ -15,12 +15,13 @@ const config: Types.Core.GameConfig = {
     height: 768,
     parent: 'game-container',
     backgroundColor: '#1a1a2e',
+    pixelArt: true,
     physics: {
         default: 'arcade'
     },
     scale: {
         mode: Scale.FIT,
-        autoCenter: Scale.CENTER_BOTH
+        autoCenter: Scale.CENTER_BOTH,
     },
     scene: [
         LoreScene,
