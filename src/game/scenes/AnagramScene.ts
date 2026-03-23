@@ -198,7 +198,10 @@ export class AnagramScene extends Scene {
         this.submitButton.setSize(buttonWidth, buttonHeight);
         this.submitButton.setDepth(100).setInteractive({ cursor: 'pointer' });
 
-        this.submitButton.on('pointerdown', () => this.checkAnswer());
+        this.submitButton.on('pointerdown', () => {
+            this.sound.play('click', { volume: 0.3 });
+            this.checkAnswer();
+        });
         this.submitButton.on('pointerover', () => submitBg.setTexture('buttonLong_beige_pressed'));
         this.submitButton.on('pointerout', () => submitBg.setTexture('buttonLong_beige'));
 
@@ -214,7 +217,10 @@ export class AnagramScene extends Scene {
         this.resetButton.setSize(buttonWidth, buttonHeight);
         this.resetButton.setDepth(100).setInteractive({ cursor: 'pointer' });
 
-        this.resetButton.on('pointerdown', () => this.resetGuess());
+        this.resetButton.on('pointerdown', () => {
+            this.sound.play('click', { volume: 0.3 });
+            this.resetGuess();
+        });
         this.resetButton.on('pointerover', () => resetBg.setTexture('buttonLong_beige_pressed'));
         this.resetButton.on('pointerout', () => resetBg.setTexture('buttonLong_beige'));
 
@@ -560,6 +566,7 @@ export class AnagramScene extends Scene {
                 this.showHint();
             } else {
                 // No correct positions, shake all tiles
+                this.sound.play('wrong', { volume: 0.5 });
                 this.shakeTiles();
 
                 // Track wrong attempt for NPC hints
@@ -691,6 +698,7 @@ export class AnagramScene extends Scene {
             const tileBg = tile.getData('tileBg') as GameObjects.NineSlice;
             tileBg.setTint(0x77ff77);
         });
+        this.sound.play('correct', { volume: 0.5 });
 
         // Show success message (matching QuizScene style)
         const resultText = this.add.text(

@@ -2,6 +2,7 @@ import { Scene } from 'phaser';
 import { MapGrid, Building, NPC } from '../data/buildings';
 import { Player } from '../objects/Player';
 import { NPC as NPCObject } from '../objects/NPC';
+import { AudioManager } from '../audio/AudioManager';
 import { quizQuestions } from '../data/questions';
 import { getAnagramForCategory } from '../data/anagrams';
 import { PAINTER_FACTS } from '../data/twoTruthsOneLie';
@@ -98,6 +99,9 @@ export class MapScene extends Scene {
         // Load Custom Fonts
         this.load.font('kenneyPixel', 'assets/fonts/Kenney Pixel.ttf');
         this.load.font('kenneyPixelSquare', 'assets/fonts/Kenney Pixel Square.ttf');
+
+        // Load Audio
+        AudioManager.preload(this);
     }
 
     create() {
@@ -272,6 +276,7 @@ export class MapScene extends Scene {
             this.interactionText.setText(`Pressione ESPAÇO para falar com: ${nearbyNPC.name}`);
 
             if (this.player.isInteracting()) {
+                this.sound.play('npcTalk', { volume: 0.4 });
                 this.showNPCHint(nearbyNPC);
             }
         } else {
@@ -483,6 +488,7 @@ export class MapScene extends Scene {
     public onQuizComplete(success: boolean | null, building: Building) {
         if (success === true) {
             this.mapGrid.conquerBuilding(building);
+            this.sound.play('conquered', { volume: 0.6 });
 
             // Synchronized Expansion logic: 5 discrete expansions
             const totalBuildings = this.mapGrid.getTotalCount();

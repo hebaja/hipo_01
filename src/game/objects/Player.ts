@@ -121,6 +121,7 @@ export class Player {
 
         this.isMoving = true;
         this.sprite.play(`walk-${this.facingDirection}`, true);
+        this.scene.sound.play('footstep', { volume: 0.15 });
 
         this.sprite.scene.tweens.add({
             targets: this.sprite,

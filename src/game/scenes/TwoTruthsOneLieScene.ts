@@ -192,6 +192,7 @@ export class TwoTruthsOneLieScene extends Scene {
 
             // Handle click
             button.on('pointerdown', () => {
+                this.sound.play('click', { volume: 0.3 });
                 this.checkAnswer(i);
             });
 
@@ -239,6 +240,7 @@ export class TwoTruthsOneLieScene extends Scene {
             // Correct - Found the Lie
             // Highlight the correct lie button
             this.factButtons[index].setStyle({ backgroundColor: '#27ae60', color: '#ffffff' });
+            this.sound.play('correct', { volume: 0.5 });
             
             this.resultText.setText("Parabéns! Você encontrou a mentira!");
             this.resultText.setVisible(true);
@@ -254,6 +256,7 @@ export class TwoTruthsOneLieScene extends Scene {
         } else {
             // Wrong - Clicked on a Truth
             this.factButtons[index].setStyle({ backgroundColor: '#e74c3c', color: '#ffffff' });
+            this.sound.play('wrong', { volume: 0.5 });
 
             // Show clue based on painter
             let clue = "";

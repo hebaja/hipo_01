@@ -148,6 +148,7 @@ export class QuizScene extends Scene {
 
             // Handle click
             button.on('pointerdown', () => {
+                this.sound.play('click', { volume: 0.3 });
                 this.selectAnswer(originalIndex);
             });
             
@@ -242,6 +243,7 @@ export class QuizScene extends Scene {
             const correctButtonData = this.optionButtons.find(btn => btn.index === selectedIndex);
             if (correctButtonData) {
                 correctButtonData.button.setTint(0x77ff77); // Green tint
+                this.sound.play('correct', { volume: 0.5 });
             }
             
             const resultText = this.add.text(
@@ -275,6 +277,7 @@ export class QuizScene extends Scene {
             const selectedButtonData = this.optionButtons.find(btn => btn.index === selectedIndex);
             if (selectedButtonData) {
                 selectedButtonData.button.setTint(0xff7777); // Red tint
+                this.sound.play('wrong', { volume: 0.5 });
             }
             
             // Wait briefly before closing (500ms for visual feedback)
