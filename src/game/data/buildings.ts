@@ -246,17 +246,16 @@ export class MapGrid {
             }
 
             occupiedPositions.add(`${pos.x},${pos.y}`);
-            let type = 'femalePerson';
-            if (s === 1) type = 'malePerson';
-            if (s === 2) type = 'robot';
+            let type = 'npc1';
+            if (s === 1) type = 'npc2';
+            if (s === 2) type = 'npc3';
 
-            const npcStage = s + 1;
-            console.log(`[NPC] Created NPC for stage ${npcStage}: ${pos.x}, ${pos.y} (type: ${type}) distance from center: ${Math.sqrt(Math.pow(pos.x - Math.floor(this.width / 2), 2) + Math.pow(pos.y - Math.floor(this.height / 2), 2)).toFixed(2)}`);
+            console.log(`[NPC] Created NPC for stage ${s + 1}: ${pos.x}, ${pos.y} (type: ${type}) distance from center: ${distance.toFixed(2)}`);
             this.npcs.push({
                 x: pos.x,
                 y: pos.y,
-                stage: npcStage,
-                name: `Mentor Estágio ${npcStage}`,
+                stage: s,
+                name: `Mentor Estágio ${s + 1}`,
                 type: type,
             });
         }
