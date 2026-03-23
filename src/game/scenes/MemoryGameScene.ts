@@ -334,6 +334,7 @@ export class MemoryGameScene extends Scene {
         container.setInteractive();
         
         container.on('pointerdown', () => {
+            this.sound.play('click', { volume: 0.3 });
             this.flipCard(container);
         });
 
@@ -355,6 +356,7 @@ export class MemoryGameScene extends Scene {
         
         // Simple flip: toggle visibility
         backSprite.visible = false;
+        this.sound.play('cardFlip', { volume: 0.4 });
         
         if (cardType === 'image') {
             const frontSprite = card.getData('frontSprite');
@@ -402,6 +404,7 @@ export class MemoryGameScene extends Scene {
             const back2 = card2.getData('backSprite');
             if (back1) back1.setTint(0x00ff00);
             if (back2) back2.setTint(0x00ff00);
+            this.sound.play('correct', { volume: 0.5 });
             
             this.matchedPairs++;
             this.building.matchedPairIds.push(pairId1);
@@ -413,6 +416,7 @@ export class MemoryGameScene extends Scene {
             }
         } else {
             // No match - flip back after delay
+            this.sound.play('wrong', { volume: 0.5 });
             this.time.delayedCall(1000, () => {
                 const back1 = card1.getData('backSprite');
                 const back2 = card2.getData('backSprite');

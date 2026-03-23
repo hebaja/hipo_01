@@ -5,12 +5,18 @@ import { PAINTER_FACTS, PainterData, Fact } from '../data/twoTruthsOneLie';
 import cursorGauntletPng from '../../assets/ui/PNG/cursorGauntlet_bronze.png';
 import cursorHandPng from '../../assets/ui/PNG/cursorHand_beige.png';
 
+interface FactButton {
+    index: number;
+    button: any;
+    text: GameObjects.Text;
+}
+
 export class TwoTruthsOneLieScene extends Scene {
     private building!: Building;
     private mapScene!: MapScene;
     private currentPainter!: PainterData;
     private currentFacts!: Fact[];
-    private factButtons: GameObjects.Text[] = [];
+    private factButtons: FactButton[] = [];
     private clueText!: GameObjects.Text;
     private resultText!: GameObjects.Text;
     private closeButton!: GameObjects.Image;
@@ -188,11 +194,16 @@ export class TwoTruthsOneLieScene extends Scene {
             buttonText.setOrigin(0.5);
             buttonText.setScrollFactor(0);
 
-            this.factButtons.push(buttonText);
+            this.factButtons.push({
+                index: i,
+                button,
+                text: buttonText
+            });
 
             // Handle click
             button.on('pointerdown', () => {
-                this.checkAnswer(i);
+                this.sound.play('click', { volume: 0.3 });
+                this.selectAnswer(i);
             });
 
             // Hover effect
@@ -229,33 +240,37 @@ export class TwoTruthsOneLieScene extends Scene {
         this.resultText.setVisible(false);
     }
 
-    private checkAnswer(index: number) {
-        const fact = this.currentFacts[index];
+    private selectAnswer(selectedIndex: number) {
+        const fact = this.currentFacts[selectedIndex];
 
-        // Disable all buttons immediately
-        this.factButtons.forEach(btn => btn.disableInteractive());
+        this.factButtons.forEach(fb => fb.button.disableInteractive());
 
         if (!fact.isTrue) {
-            // Correct - Found the Lie
-            // Highlight the correct lie button
-            this.factButtons[index].setStyle({ backgroundColor: '#27ae60', color: '#ffffff' });
-            
+            const correctButton = this.factButtons.find(fb => fb.index === selectedIndex);
+            if (correctButton) {
+                correctButton.button.setTint(0x77ff77);
+                correctButton.text.setStyle({ color: '#00ff00' });
+                this.sound.play('correct', { volume: 0.5 });
+            }
+
             this.resultText.setText("Parabéns! Você encontrou a mentira!");
+            this.resultText.setStyle({ color: '#00ff00' });
             this.resultText.setVisible(true);
 
-            // Reset wrong attempts on correct answer
             this.building.wrongAttempts = 0;
 
-            // Delay before closing on correct answer
             this.time.delayedCall(1000, () => {
                 this.scene.stop();
                 this.mapScene.onQuizComplete(true, this.building);
             });
         } else {
-            // Wrong - Clicked on a Truth
-            this.factButtons[index].setStyle({ backgroundColor: '#e74c3c', color: '#ffffff' });
+            const selectedButton = this.factButtons.find(fb => fb.index === selectedIndex);
+            if (selectedButton) {
+                selectedButton.button.setTint(0xff7777);
+                selectedButton.text.setStyle({ color: '#ff0000' });
+                this.sound.play('wrong', { volume: 0.5 });
+            }
 
-            // Show clue based on painter
             let clue = "";
             if (this.currentPainter.name === "Picasso") {
                 clue = "Dica: Picasso passou por vários períodos artísticos, incluindo o Cubismo.";
@@ -268,10 +283,8 @@ export class TwoTruthsOneLieScene extends Scene {
             this.clueText.setText(clue);
             this.clueText.setVisible(true);
 
-            // Increment wrong attempts
             this.building.wrongAttempts++;
 
-            // Wait briefly before closing (500ms for visual feedback)
             this.time.delayedCall(1000, () => {
                 this.scene.stop();
                 this.mapScene.onQuizComplete(false, this.building);

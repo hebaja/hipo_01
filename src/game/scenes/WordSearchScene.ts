@@ -510,6 +510,7 @@ export class WordSearchScene extends Scene {
 
         this.foundWords.push(word);
         this.building.foundWords.push(word);
+        this.sound.play('correct', { volume: 0.5 });
         this.highlightSelectedCells();
 
         // Check win condition
