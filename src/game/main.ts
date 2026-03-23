@@ -1,4 +1,10 @@
-import { Game as MainGame } from './scenes/Game';
+import { MapScene } from './scenes/MapScene';
+import { LoreScene } from './scenes/LoreScene';
+import { QuizScene } from './scenes/QuizScene';
+import { AnagramScene } from './scenes/AnagramScene';
+import { TwoTruthsOneLieScene } from './scenes/TwoTruthsOneLieScene';
+import { WordSearchScene } from './scenes/WordSearchScene';
+import { MemoryGameScene } from './scenes/MemoryGameScene';
 import { AUTO, Game, Scale,Types } from 'phaser';
 
 // Find out more information about the Game Config at:
@@ -8,7 +14,7 @@ const config: Types.Core.GameConfig = {
     width: 1024,
     height: 768,
     parent: 'game-container',
-    backgroundColor: '#028af8',
+    backgroundColor: '#1a1a2e',
     physics: {
         default: 'arcade'
     },
@@ -17,7 +23,13 @@ const config: Types.Core.GameConfig = {
         autoCenter: Scale.CENTER_BOTH
     },
     scene: [
-        MainGame
+        LoreScene,
+        MapScene,
+        QuizScene,
+        AnagramScene,
+        TwoTruthsOneLieScene,
+        WordSearchScene,
+        MemoryGameScene
     ]
 };
 
