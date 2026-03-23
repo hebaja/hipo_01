@@ -197,15 +197,6 @@ export class QuizScene extends Scene {
             this.time.delayedCall(3000, () => tooltip.destroy());
         });
 
-        // Instructions text
-        const instructionText = this.add.text(panelX, panelY + panelHeight / 2 - 30, 'Clique em um opção para responder', {
-            fontFamily: 'Kenney Pixel',
-            fontSize: '14px',
-            color: '#aaaaaa',
-            shadow: { offsetX: 2, offsetY: 2, color: '#000000', blur: 4, fill: true }
-        });
-        instructionText.setOrigin(0.5);
-        instructionText.setScrollFactor(0);
 
         // Close button (Icon image instead of text)
         // Adjust position relative to the panel corners

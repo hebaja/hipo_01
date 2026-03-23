@@ -94,19 +94,10 @@ export class AnagramScene extends Scene {
         titleText.setOrigin(0.5);
         titleText.setScrollFactor(0);
 
-        // Instructions
-        const instructionText = this.add.text(panelX, panelY - panelHeight/2 + 90, 'Arraste as letras para formar a palavra', {
-            fontSize: '14px',
-            color: '#aaaaaa',
-            shadow: { offsetX: 2, offsetY: 2, color: '#000000', blur: 4, fill: true }
-        });
-        instructionText.setOrigin(0.5);
-        instructionText.setScrollFactor(0);
-
         // Generic Hint (displayed immediately) - positioned under instructions
         const genericHintText = this.add.text(panelX, panelY - panelHeight/2 + 120, `Dica: ${this.anagram.genericHint}`, {
             fontSize: '14px',
-            color: '#aaaaaa',
+            color: '#ffffff',
             align: 'center',
             wordWrap: { width: panelWidth - 40 },
             shadow: { offsetX: 2, offsetY: 2, color: '#000000', blur: 4, fill: true }

@@ -79,15 +79,6 @@ export class TwoTruthsOneLieScene extends Scene {
         titleText.setOrigin(0.5);
         titleText.setScrollFactor(0);
 
-        // Instructions
-        const instructionText = this.add.text(panelX, panelY - panelHeight/2 + 90, 'Encontre a MENTIRA sobre o pintor:', {
-            fontSize: '14px',
-            color: '#aaaaaa',
-            shadow: { offsetX: 2, offsetY: 2, color: '#000000', blur: 4, fill: true }
-        });
-        instructionText.setOrigin(0.5);
-        instructionText.setScrollFactor(0);
-
         // Initialize game state
         this.startGame(panelX, panelY, panelWidth);
 
@@ -193,7 +184,6 @@ export class TwoTruthsOneLieScene extends Scene {
                 fontStyle: 'bold',
                 wordWrap: { width: buttonWidth - 20, useAdvancedWrap: true },
                 align: 'center',
-                shadow: { offsetX: 2, offsetY: 2, color: '#000000', blur: 4, fill: true }
             });
             buttonText.setOrigin(0.5);
             buttonText.setScrollFactor(0);
