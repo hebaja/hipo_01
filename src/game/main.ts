@@ -1,4 +1,5 @@
 import { MapScene } from './scenes/MapScene';
+import { LoreScene } from './scenes/LoreScene';
 import { QuizScene } from './scenes/QuizScene';
 import { AnagramScene } from './scenes/AnagramScene';
 import { TwoTruthsOneLieScene } from './scenes/TwoTruthsOneLieScene';
@@ -22,6 +23,7 @@ const config: Types.Core.GameConfig = {
         autoCenter: Scale.CENTER_BOTH
     },
     scene: [
+        LoreScene,
         MapScene,
         QuizScene,
         AnagramScene,
