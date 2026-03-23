@@ -106,15 +106,6 @@ export class WordSearchScene extends Scene {
         titleText.setOrigin(0.5);
         titleText.setScrollFactor(0);
 
-        // Instructions
-        const instructionText = this.add.text(panelX, panelY - panelHeight/2 + 90, 'Encontre as palavras da lista', {
-            fontSize: '14px',
-            color: '#aaaaaa',
-            shadow: { offsetX: 2, offsetY: 2, color: '#000000', blur: 4, fill: true }
-        });
-        instructionText.setOrigin(0.5);
-        instructionText.setScrollFactor(0);
-
         // Calculate offset to center the grid within the panel
         // Grid size: 9x9, Cell size: 30px => 270x270px
         const gridWidth = this.gridSize * this.cellSize;
