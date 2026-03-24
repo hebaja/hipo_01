@@ -249,7 +249,7 @@ export class QuizScene extends Scene {
             const resultText = this.add.text(
                 this.cameras.main.width / 2,
                 this.cameras.main.height / 2 + 130,
-                '✓ Correct!',
+                '✓ Correto!',
                 {
                     fontFamily: 'Kenney Pixel',
                     fontSize: '24px',
